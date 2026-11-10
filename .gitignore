@@ -1,0 +1,38 @@
+# macOS
+.DS_Store
+
+# Xcode
+xcuserdata/
+*.xcuserstate
+DerivedData/
+build/
+*.xcarchive
+*.ipa
+*.dSYM.zip
+*.dSYM
+
+# Swift Package Manager
+.build/
+.swiftpm/
+
+# Local tooling
+.claude/
+.vscode/
+.idea/
+
+# Large media (promo videos, screen recordings, raw screenshots)
+*.mp4
+*.mov
+*.m4v
+screenshots/
+
+# Private release notes (App Store Connect record, account details)
+docs/RELEASE_CHECKLIST.md
+
+# Secrets, should any ever appear
+*.p8
+*.p12
+*.mobileprovision
+*.cer
+.env
+.env.*
