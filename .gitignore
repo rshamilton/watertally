@@ -36,3 +36,6 @@ docs/RELEASE_CHECKLIST.md
 *.cer
 .env
 .env.*
+
+# Private business notes (App Store Connect snapshots, marketing strategy)
+private/
