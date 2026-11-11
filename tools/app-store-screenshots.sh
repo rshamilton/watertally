@@ -11,12 +11,14 @@ REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 DERIVED_DATA="${DERIVED_DATA:-${TMPDIR:-/tmp}/WaterTallyScreenshotsDD}"
 BUNDLE_ID="me.ryham.WaterTally"
 OUT="$REPO_DIR/screenshots"
-RUNTIME="$(xcrun simctl list runtimes available | grep -E '^iOS' | tail -1 | sed -E 's/.* - (com\.apple\.[^ ]+).*/\1/')"
+# Use the oldest installed iOS runtime by default: a brand-new runtime spends its first boot doing
+# heavy background setup that slows the whole Mac. Override with RUNTIME=com.apple.CoreSimulator.SimRuntime.iOS-xx-x
+RUNTIME="${RUNTIME:-$(xcrun simctl list runtimes available | grep -E '^iOS' | head -1 | sed -E 's/.* - (com\.apple\.[^ ]+).*/\1/')}"
 
-# name|device type|output folder
+# name|device type|output folder|seconds to let the screen settle once the app reports ready
 DEVICES=(
-  "WT Screens iPhone 6.5|com.apple.CoreSimulator.SimDeviceType.iPhone-14-Plus|iphone-6.5"
-  "WT Screens iPad 13|com.apple.CoreSimulator.SimDeviceType.iPad-Pro-13-inch-M5-12GB|ipad-13"
+  "WT iPhone 14 Plus|com.apple.CoreSimulator.SimDeviceType.iPhone-14-Plus|iphone-6.5|2"
+  "WT iPad Pro 13|com.apple.CoreSimulator.SimDeviceType.iPad-Pro-13-inch-M5-12GB|ipad-13|3"
 )
 
 # file name|launch arguments (always with -demoData)
@@ -36,22 +38,32 @@ xcodebuild -project "$REPO_DIR/WaterTally.xcodeproj" -scheme WaterTally -configu
 APP="$DERIVED_DATA/Build/Products/Debug-iphonesimulator/WaterTally.app"
 
 for device in "${DEVICES[@]}"; do
-  IFS='|' read -r NAME TYPE FOLDER <<< "$device"
+  IFS='|' read -r NAME TYPE FOLDER WAIT <<< "$device"
   UDID="$(xcrun simctl list devices available | grep -F "$NAME (" | head -1 | sed -E 's/.*\(([0-9A-F-]{36})\).*/\1/' || true)"
-  [[ -n "$UDID" ]] || UDID="$(xcrun simctl create "$NAME" "$TYPE" "$RUNTIME")"
+  FRESH=0
+  if [[ -z "$UDID" ]]; then UDID="$(xcrun simctl create "$NAME" "$TYPE" "$RUNTIME")"; FRESH=1; fi
   xcrun simctl boot "$UDID" 2>/dev/null || true
   xcrun simctl bootstatus "$UDID" -b >/dev/null
+  if [[ "$FRESH" == 1 ]]; then echo "[INFO] First boot of $NAME: letting it finish setting up..."; sleep 90; fi
   xcrun simctl status_bar "$UDID" override --time "9:41" --batteryState charged --batteryLevel 100 \
     --cellularMode active --cellularBars 4 --wifiBars 3
   xcrun simctl install "$UDID" "$APP"
   mkdir -p "$OUT/$FOLDER"
+  # Warm-up launch: the first launch after install is much slower than the rest.
+  xcrun simctl launch "$UDID" "$BUNDLE_ID" -demoData >/dev/null
+  sleep 15
 
+  READY="$(xcrun simctl get_app_container "$UDID" "$BUNDLE_ID" data)/tmp/debug-ready"
   for shot in "${SHOTS[@]}"; do
     IFS='|' read -r FILE ARGS <<< "$shot"
     xcrun simctl terminate "$UDID" "$BUNDLE_ID" >/dev/null 2>&1 || true
+    rm -f "$READY"
     # shellcheck disable=SC2086
     xcrun simctl launch "$UDID" "$BUNDLE_ID" -demoData $ARGS >/dev/null
-    sleep 5
+    # DEBUG builds write this file once the requested screen is set up (DebugLaunch.markReady).
+    for _ in $(seq 1 120); do [[ -f "$READY" ]] && break; sleep 0.5; done
+    [[ -f "$READY" ]] || echo "[WARN] $FILE: app never reported ready"
+    sleep "$WAIT"   # let sheets and animations settle
     xcrun simctl io "$UDID" screenshot --type=png "$OUT/$FOLDER/$FILE.png" >/dev/null 2>&1
     echo "[INFO] $FOLDER/$FILE.png"
   done
