@@ -76,7 +76,7 @@ struct ButtonFormSheet: View {
                                 .keyboardType(.decimalPad)
                                 .focused($focusedField, equals: .amount)
                                 .onChange(of: amountText) { _, newValue in
-                                    if let value = Double(newValue), value > appState.maxDisplayAmount {
+                                    if let value = NumberInput.parse(newValue), value > appState.maxDisplayAmount {
                                         amountText = Volume.number(displayValue: appState.maxDisplayAmount, metric: appState.useMetric)
                                     }
                                 }
@@ -91,19 +91,19 @@ struct ButtonFormSheet: View {
                     VStack(alignment: .leading, spacing: 12) {
                         Text("Colour")
                             .font(.footnote.weight(.semibold))
-                            .foregroundColor(.cyan)
+                            .foregroundColor(.white.opacity(0.6))
                             .padding(.leading, 6)
                         LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 14), count: 5), spacing: 14) {
-                            ForEach(Color.buttonColors, id: \.0) { hex, color in
-                                Button { colorHex = hex } label: {
+                            ForEach(Color.buttonColors) { option in
+                                Button { colorHex = option.hex } label: {
                                     Circle()
-                                        .fill(color)
-                                        .frame(width: 48, height: 48)
-                                        .overlay(Circle().stroke(.white, lineWidth: colorHex == hex ? 3 : 0))
-                                        .shadow(color: color.opacity(0.5), radius: 6)
+                                        .fill(option.color)
+                                        .frame(width: 44, height: 44)
+                                        .padding(4)
+                                        .overlay(Circle().strokeBorder(.white, lineWidth: colorHex == option.hex ? 2.5 : 0))
                                 }
-                                .accessibilityLabel("Colour")
-                                .accessibilityAddTraits(colorHex == hex ? .isSelected : [])
+                                .accessibilityLabel(option.name)
+                                .accessibilityAddTraits(colorHex == option.hex ? .isSelected : [])
                             }
                         }
                     }
@@ -126,7 +126,7 @@ struct ButtonFormSheet: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") { dismiss() }.foregroundColor(.cyan)
+                    Button("Cancel") { dismiss() }.foregroundColor(.water)
                 }
                 ToolbarItemGroup(placement: .keyboard) {
                     Spacer()
@@ -139,14 +139,14 @@ struct ButtonFormSheet: View {
 
     private var preview: some View {
         let previewButton = HydrationButton(
-            name: name, fluidOunces: appState.convertFromDisplayUnit(Double(amountText) ?? 0), order: 0,
+            name: name, fluidOunces: appState.convertFromDisplayUnit(NumberInput.parse(amountText) ?? 0), order: 0,
             color: colorHex, showAmount: showAmount, isCustom: isCustomButton
         )
         return Button {} label: {
             HydrationButtonLabel(appState: appState, button: previewButton)
                 .frame(width: 160, height: 90)
         }
-        .buttonStyle(GlassTileStyle(color: accent))
+        .buttonStyle(TileButtonStyle(color: accent))
         .allowsHitTesting(false)
         .accessibilityHidden(true)
         .padding(.top, 12)
@@ -156,13 +156,13 @@ struct ButtonFormSheet: View {
         VStack(alignment: .leading, spacing: 8) {
             Text(label)
                 .font(.footnote.weight(.semibold))
-                .foregroundColor(.cyan)
+                .foregroundColor(.white.opacity(0.6))
                 .padding(.leading, 6)
             content()
                 .font(.body)
                 .foregroundColor(.white)
                 .padding(14)
-                .liquidGlassBackground(cornerRadius: 14)
+                .card(cornerRadius: 14)
         }
     }
 
@@ -177,7 +177,7 @@ struct ButtonFormSheet: View {
         }
 
         guard !trimmedName.isEmpty else { errorText = "Give the button a name."; return }
-        guard let value = Double(amountText.replacingOccurrences(of: ",", with: ".")), value > 0 else {
+        guard let value = NumberInput.parse(amountText), value > 0 else {
             errorText = "Enter an amount greater than 0."
             return
         }
@@ -254,13 +254,13 @@ struct CalendarView: View {
                     .opacity(canGoForward ? 1 : 0.3)
                     .accessibilityLabel("Next month")
                 }
-                .foregroundColor(.cyan)
+                .foregroundColor(.water)
 
                 HStack(spacing: 0) {
                     ForEach(Array(weekdaySymbols.enumerated()), id: \.offset) { _, symbol in
                         Text(symbol)
                             .font(.caption.weight(.semibold))
-                            .foregroundColor(.cyan)
+                            .foregroundColor(.white.opacity(0.5))
                             .frame(maxWidth: .infinity)
                     }
                 }
@@ -287,7 +287,7 @@ struct CalendarView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("Done") { dismiss() }.foregroundColor(.cyan)
+                    Button("Done") { dismiss() }.foregroundColor(.water)
                 }
             }
             .appScreen(themeColor: appState.themeColor)
@@ -323,10 +323,8 @@ struct CalendarView: View {
 
     private var legend: some View {
         HStack(spacing: 16) {
-            legendItem(.green, "Goal reached")
-            legendItem(.yellow, "70%+")
-            legendItem(.orange, "30%+")
-            legendItem(.red.opacity(0.8), "Under")
+            legendItem(.water, "Goal reached")
+            legendItem(.water.opacity(0.4), "Some logged")
         }
         .font(.caption2)
         .foregroundColor(.white.opacity(0.7))
@@ -373,12 +371,7 @@ struct CalendarDayView: View {
     let goalProgress: Double
     let goalMet: Bool
 
-    private var dotColor: Color {
-        if goalMet { return .green }
-        if goalProgress >= 0.7 { return .yellow }
-        if goalProgress >= 0.3 { return .orange }
-        return .red.opacity(0.8)
-    }
+    private var dotColor: Color { goalMet ? .water : .water.opacity(0.4) }
 
     var body: some View {
         VStack(spacing: 4) {
@@ -393,10 +386,10 @@ struct CalendarDayView: View {
         .frame(maxWidth: .infinity)
         .background(
             RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .fill(isSelected ? Color.cyan.opacity(0.3) : Color.white.opacity(hasLogs ? 0.06 : 0))
+                .fill(isSelected ? Color.water.opacity(0.25) : Color.white.opacity(hasLogs ? 0.05 : 0))
                 .overlay(
                     RoundedRectangle(cornerRadius: 12, style: .continuous)
-                        .stroke(isToday ? Color.cyan : .clear, lineWidth: 1.5)
+                        .strokeBorder(isToday ? Color.water.opacity(0.8) : .clear, lineWidth: 1.5)
                 )
         )
     }
@@ -416,9 +409,6 @@ struct HistoryView: View {
             Group {
                 if logs.isEmpty {
                     VStack(spacing: 14) {
-                        Image(systemName: "drop.fill")
-                            .font(.system(size: 56))
-                            .foregroundColor(.cyan.opacity(0.35))
                         Text("No entries")
                             .font(.title3.weight(.semibold))
                             .foregroundColor(.white)
@@ -484,7 +474,7 @@ struct HistoryView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("Done") { dismiss() }.foregroundColor(.cyan)
+                    Button("Done") { dismiss() }.foregroundColor(.water)
                 }
             }
             .sheet(item: $editingLog) { log in
@@ -510,7 +500,7 @@ struct HistoryLogRow: View {
                     Text(log.timestamp.formatted(date: .omitted, time: .shortened))
                     if appState.healthKitEnabled && log.syncedToHealthKit {
                         Image(systemName: "heart.fill")
-                            .foregroundColor(.pink)
+                            .foregroundColor(.white.opacity(0.45))
                             .font(.caption2)
                             .accessibilityLabel("Saved to Apple Health")
                     }
@@ -524,7 +514,7 @@ struct HistoryLogRow: View {
                 .foregroundColor(.white)
         }
         .padding(16)
-        .liquidGlassBackground(cornerRadius: 16)
+        .card(cornerRadius: 16)
     }
 }
 
@@ -562,10 +552,10 @@ struct EditLogView: View {
                         .multilineTextAlignment(.center)
                         .frame(width: 150)
                         .padding(.vertical, 8)
-                        .liquidGlassBackground(cornerRadius: 16)
+                        .card(cornerRadius: 16)
                         .focused($focused)
                         .onChange(of: amountText) { _, newValue in
-                            if let value = Double(newValue), value > appState.maxDisplayAmount {
+                            if let value = NumberInput.parse(newValue), value > appState.maxDisplayAmount {
                                 amountText = Volume.number(displayValue: appState.maxDisplayAmount, metric: appState.useMetric)
                             }
                         }
@@ -586,7 +576,7 @@ struct EditLogView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") { dismiss() }.foregroundColor(.cyan)
+                    Button("Cancel") { dismiss() }.foregroundColor(.water)
                 }
             }
             .appScreen(themeColor: appState.themeColor)
@@ -595,7 +585,7 @@ struct EditLogView: View {
     }
 
     private func save() {
-        guard let value = Double(amountText.replacingOccurrences(of: ",", with: ".")) else {
+        guard let value = NumberInput.parse(amountText) else {
             errorText = "Enter an amount."
             return
         }

@@ -57,7 +57,7 @@ struct SettingsView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("Done") { dismiss() }.foregroundColor(.cyan)
+                    Button("Done") { dismiss() }.foregroundColor(.water)
                 }
             }
             .sheet(isPresented: $showGoal) { GoalSettingsView(appState: appState) }
@@ -95,7 +95,7 @@ struct SettingsView: View {
                 HStack {
                     Label("Daily goal", systemImage: "target").foregroundColor(.primary)
                     Spacer()
-                    Text(appState.formatVolume(appState.dailyGoal)).foregroundColor(.cyan)
+                    Text(appState.formatVolume(appState.dailyGoal)).foregroundColor(.white.opacity(0.6))
                     Image(systemName: "chevron.right").font(.footnote.weight(.semibold)).foregroundColor(.secondary)
                 }
             }
@@ -122,7 +122,7 @@ struct SettingsView: View {
             )) {
                 Label("Drink reminders", systemImage: "bell.fill")
             }
-            .tint(.cyan)
+            .tint(.water)
 
             if appState.remindersEnabled {
                 Picker("From", selection: $appState.reminderStartHour) {
@@ -158,7 +158,7 @@ struct SettingsView: View {
             if healthConnected {
                 HStack {
                     Label(appState.isSyncingHealthKit ? "Syncing…" : "Up to date", systemImage: appState.isSyncingHealthKit ? "arrow.triangle.2.circlepath" : "checkmark.circle.fill")
-                        .foregroundColor(appState.isSyncingHealthKit ? .cyan : .green)
+                        .foregroundColor(appState.isSyncingHealthKit ? .water : .goalGreen)
                     Spacer()
                     if appState.isSyncingHealthKit { ProgressView() }
                 }
@@ -249,13 +249,13 @@ struct SettingsView: View {
 
     // MARK: Helpers
 
-    private var rowBackground: some View { Color.white.opacity(0.07) }
+    private var rowBackground: some View { Color.cardFill }
 
     private func row(_ title: String, _ value: String) -> some View {
         HStack {
             Text(title)
             Spacer()
-            Text(value).foregroundColor(.cyan)
+            Text(value).foregroundColor(.white.opacity(0.6))
         }
         .accessibilityElement(children: .combine)
     }
@@ -264,7 +264,7 @@ struct SettingsView: View {
         HStack {
             Label(title, systemImage: icon).foregroundColor(.primary)
             Spacer()
-            Image(systemName: "arrow.up.right").font(.footnote.weight(.semibold)).foregroundColor(.cyan)
+            Image(systemName: "arrow.up.right").font(.footnote.weight(.semibold)).foregroundColor(.white.opacity(0.35))
         }
     }
 

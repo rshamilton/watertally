@@ -1,14 +1,15 @@
 /* Water Tally website — shared styles. No JavaScript, no external requests, no cookies. */
 
+/* Same palette as the app (WaterTally/LiquidGlassStyles.swift) and the icon. */
 :root {
-  --bg: #04101c;
-  --bg-2: #071c30;
-  --surface: rgba(255, 255, 255, 0.06);
-  --border: rgba(120, 220, 255, 0.22);
-  --text: #eaf6ff;
-  --muted: #a9c3d6;
-  --accent: #46d3ff;
-  --accent-strong: #0aa5d6;
+  --bg: #0b1724;          /* night */
+  --bg-2: #0e1f31;
+  --surface: rgba(255, 255, 255, 0.05);
+  --border: rgba(255, 255, 255, 0.10);
+  --text: #f5f1e8;        /* paper */
+  --muted: #a7b3c0;
+  --accent: #5db7f5;      /* water */
+  --accent-strong: #2f8fe0;
   --warn-bg: rgba(255, 176, 60, 0.12);
   --warn-border: rgba(255, 176, 60, 0.5);
   --radius: 16px;
@@ -18,14 +19,14 @@
 
 @media (prefers-color-scheme: light) {
   :root {
-    --bg: #f5fafe;
-    --bg-2: #e6f3fb;
-    --surface: #ffffff;
-    --border: rgba(10, 100, 160, 0.2);
-    --text: #0b2233;
-    --muted: #4a6579;
-    --accent: #0a74b0;
-    --accent-strong: #075f92;
+    --bg: #f5f1e8;        /* paper */
+    --bg-2: #efe9dd;
+    --surface: #fffdf8;
+    --border: rgba(14, 58, 102, 0.14);
+    --text: #0e2238;
+    --muted: #4f5f70;
+    --accent: #1f6fb8;
+    --accent-strong: #0e3a66; /* ink */
     --warn-bg: #fff6e5;
     --warn-border: #e9a53b;
   }
@@ -39,7 +40,7 @@ body {
   margin: 0;
   font: 17px/1.65 -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   color: var(--text);
-  background: linear-gradient(180deg, var(--bg) 0%, var(--bg-2) 100%) fixed;
+  background: var(--bg);
   min-height: 100vh;
   display: flex;
   flex-direction: column;
@@ -61,7 +62,7 @@ a:focus-visible, button:focus-visible { outline: 3px solid var(--accent); outlin
   max-width: 1000px; width: 100%; margin: 0 auto; padding: 18px 20px;
 }
 .brand { display: flex; align-items: center; gap: 12px; color: var(--text); text-decoration: none; font-weight: 700; font-size: 1.3rem; }
-.brand img { width: 38px; height: 38px; border-radius: 9px; }
+.brand img { width: 34px; height: 34px; border-radius: 8px; }
 nav ul { display: flex; flex-wrap: wrap; gap: 4px 18px; list-style: none; margin: 0; padding: 0; }
 nav a { color: var(--muted); text-decoration: none; font-size: 0.95rem; padding: 6px 2px; border-bottom: 2px solid transparent; }
 nav a:hover, nav a[aria-current="page"] { color: var(--text); border-bottom-color: var(--accent); }
@@ -95,8 +96,8 @@ li { margin: 0.35em 0; }
 
 /* Landing */
 .hero { text-align: center; padding: 36px 0 12px; }
-.hero img.icon { width: 132px; height: 132px; border-radius: 30px; box-shadow: 0 18px 50px rgba(10, 165, 214, 0.35); }
-.hero h1 { font-size: clamp(2.4rem, 7vw, 3.6rem); margin: 22px 0 6px; }
+.hero img.icon { width: 120px; height: 120px; border-radius: 27px; }
+.hero h1 { font-size: clamp(2.4rem, 7vw, 3.4rem); margin: 22px 0 6px; letter-spacing: -0.02em; }
 .hero .lead { max-width: 30em; margin: 0 auto 26px; }
 .badge {
   display: inline-block; padding: 12px 22px; border-radius: 999px; background: var(--surface);

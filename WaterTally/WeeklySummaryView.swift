@@ -21,48 +21,39 @@ struct WeeklySummaryView: View {
         let total = data.days.reduce(0) { $0 + $1.ounces }
 
         ZStack {
-            AppBackground(themeColor: appState.themeColor, diagonal: true)
+            AppBackground(themeColor: appState.themeColor)
 
-            VStack(spacing: 20) {
-                VStack(spacing: 8) {
-                    Image(systemName: "sparkles")
-                        .font(.system(size: 44))
-                        .foregroundColor(.yellow)
-                        .shadow(color: .yellow.opacity(0.6), radius: 10)
+            VStack(spacing: 24) {
+                VStack(spacing: 6) {
                     Text("Your week")
                         .font(.largeTitle.bold())
                         .foregroundColor(.white)
-                    Text("The last 7 days")
+                    Text(weekRange(data))
                         .font(.subheadline)
-                        .foregroundColor(.cyan)
+                        .foregroundColor(.white.opacity(0.6))
                 }
-                .padding(.top, 36)
+                .padding(.top, 40)
 
                 ScrollView(showsIndicators: false) {
-                    VStack(spacing: 14) {
-                        SummaryCard(icon: "drop.fill", color: .cyan, title: "Total", value: appState.formatVolume(total),
-                                    subtitle: "Logged this week")
-                        SummaryCard(icon: "chart.bar.fill", color: .blue, title: "Daily average",
-                                    value: appState.formatVolume(total / Double(max(countedDays.count, 1))),
-                                    subtitle: "Per day tracked")
-                        SummaryCard(icon: rate >= 100 ? "star.fill" : "target", color: rate >= 100 ? .yellow : .orange,
-                                    title: "Goal reached", value: "\(goalDays) of \(countedDays.count) days",
-                                    subtitle: rate >= 100 ? "Every day!" : "\(Int(rate.rounded()))% of days")
-                        SummaryCard(icon: "flame.fill", color: .orange, title: "Current streak",
-                                    value: "\(appState.currentStreak) \(appState.currentStreak == 1 ? "day" : "days")",
-                                    subtitle: appState.currentStreak > 0 ? "Keep it going" : "Start a new one today")
-                        if let best = data.best {
-                            SummaryCard(icon: "trophy.fill", color: .yellow, title: "Best day",
-                                        value: appState.formatVolume(best.ounces),
-                                        subtitle: best.date.formatted(.dateTime.weekday(.wide)))
+                    VStack(spacing: 12) {
+                        WeekBars(appState: appState, days: data.days)
+                            .padding(16)
+                            .card()
+
+                        LazyVGrid(columns: [GridItem(.flexible(), spacing: 12), GridItem(.flexible(), spacing: 12)], spacing: 12) {
+                            SummaryTile(title: "Total", value: appState.formatVolume(total))
+                            SummaryTile(title: "Daily average",
+                                        value: appState.formatVolume(total / Double(max(countedDays.count, 1))))
+                            SummaryTile(title: "Goal reached", value: "\(goalDays) of \(countedDays.count) days")
+                            SummaryTile(title: "Current streak",
+                                        value: "\(appState.currentStreak) \(appState.currentStreak == 1 ? "day" : "days")")
                         }
+
                         Text(message(rate: rate))
-                            .font(.headline)
-                            .foregroundColor(.white)
+                            .font(.body)
+                            .foregroundColor(.white.opacity(0.8))
                             .multilineTextAlignment(.center)
-                            .padding(18)
-                            .frame(maxWidth: .infinity)
-                            .liquidGlassBackground(cornerRadius: 16)
+                            .padding(.top, 8)
                     }
                     .padding(.horizontal, 20)
                     .frame(maxWidth: 560)
@@ -71,12 +62,18 @@ struct WeeklySummaryView: View {
 
                 Button("Continue") { dismiss() }
                     .buttonStyle(PrimaryButtonStyle())
-                    .padding(.horizontal, 40)
+                    .padding(.horizontal, 24)
                     .padding(.bottom, 24)
                     .frame(maxWidth: 480)
             }
         }
         .preferredColorScheme(.dark)
+    }
+
+    private func weekRange(_ data: TrendsData) -> String {
+        let start = data.start.formatted(.dateTime.month(.abbreviated).day())
+        let end = data.end.formatted(.dateTime.month(.abbreviated).day())
+        return "\(start) – \(end)"
     }
 
     private func message(rate: Double) -> String {
@@ -89,30 +86,62 @@ struct WeeklySummaryView: View {
     }
 }
 
-struct SummaryCard: View {
-    let icon: String
-    let color: Color
+struct SummaryTile: View {
     let title: String
     let value: String
-    let subtitle: String
 
     var body: some View {
-        HStack(spacing: 16) {
-            ZStack {
-                Circle().fill(color.opacity(0.2)).frame(width: 56, height: 56)
-                Image(systemName: icon)
-                    .font(.system(size: 24))
-                    .foregroundColor(color)
-            }
-            VStack(alignment: .leading, spacing: 4) {
-                Text(title).font(.footnote).foregroundColor(.white.opacity(0.7))
-                Text(value).font(.title3.bold()).foregroundColor(.white)
-                Text(subtitle).font(.caption).foregroundColor(.cyan.opacity(0.9))
-            }
-            Spacer(minLength: 0)
+        VStack(alignment: .leading, spacing: 6) {
+            Text(title)
+                .font(.footnote)
+                .foregroundColor(.white.opacity(0.6))
+            Text(value)
+                .font(.title3.weight(.semibold))
+                .foregroundColor(.white)
+                .lineLimit(1)
+                .minimumScaleFactor(0.7)
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
         .padding(16)
-        .liquidGlassBackground(cornerRadius: 16)
+        .card()
         .accessibilityElement(children: .combine)
+    }
+}
+
+/// Seven small bars, one per day, with the goal as a faint line.
+struct WeekBars: View {
+    @ObservedObject var appState: AppState
+    let days: [TrendsData.Day]
+
+    var body: some View {
+        let peak = max(days.map(\.ounces).max() ?? 0, appState.dailyGoal) * 1.1
+        HStack(alignment: .bottom, spacing: 10) {
+            ForEach(days) { day in
+                VStack(spacing: 6) {
+                    GeometryReader { proxy in
+                        let height = proxy.size.height
+                        ZStack(alignment: .bottom) {
+                            RoundedRectangle(cornerRadius: 5, style: .continuous)
+                                .fill(Color.white.opacity(0.06))
+                            RoundedRectangle(cornerRadius: 5, style: .continuous)
+                                .fill(Limits.isGoalMet(total: day.ounces, goal: appState.dailyGoal) ? Color.water : Color.water.opacity(0.45))
+                                .frame(height: peak > 0 ? height * day.ounces / peak : 0)
+                        }
+                        .overlay(alignment: .bottom) {
+                            Rectangle()
+                                .fill(Color.white.opacity(0.35))
+                                .frame(height: 1)
+                                .offset(y: -height * appState.dailyGoal / peak)
+                        }
+                    }
+                    .frame(height: 96)
+                    Text(day.date.formatted(.dateTime.weekday(.narrow)))
+                        .font(.caption2.weight(.medium))
+                        .foregroundColor(.white.opacity(0.6))
+                }
+            }
+        }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("Daily amounts for the last seven days")
     }
 }

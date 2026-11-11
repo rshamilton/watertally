@@ -21,7 +21,7 @@ struct ContentView: View {
 
     var body: some View {
         ZStack {
-            AppBackground(themeColor: appState.themeColor, diagonal: true)
+            AppBackground(themeColor: appState.themeColor)
 
             VStack(spacing: 0) {
                 TopBar(appState: appState, showSettings: $showSettings)
@@ -33,20 +33,22 @@ struct ContentView: View {
                         .frame(maxWidth: 700)
                         .transition(.move(edge: .trailing).combined(with: .opacity))
                 } else {
-                    ScrollView(showsIndicators: false) {
-                        VStack(spacing: isIPadLayout ? 36 : 18) {
-                            DayNavigator(appState: appState)
-                                .padding(.top, 24)
-                                .scaleEffect(isIPadLayout ? 1.25 : 1)
-                                .padding(.vertical, isIPadLayout ? 36 : 0)
+                    GeometryReader { proxy in
+                        ScrollView(showsIndicators: false) {
+                            VStack(spacing: isIPadLayout ? 44 : 28) {
+                                DayNavigator(appState: appState)
+                                    .scaleEffect(isIPadLayout ? 1.25 : 1)
+                                    .padding(.vertical, isIPadLayout ? 36 : 0)
 
-                            ButtonGridView(appState: appState)
+                                ButtonGridView(appState: appState)
+                            }
+                            .padding(.vertical, 16)
+                            .frame(maxWidth: 700)
+                            .frame(maxWidth: .infinity, minHeight: proxy.size.height)
                         }
-                        .padding(.bottom, 12)
-                        .frame(maxWidth: 700)
-                        .frame(maxWidth: .infinity)
+                        .scrollBounceBehavior(.basedOnSize)
+                        .scrollClipDisabled()
                     }
-                    .scrollClipDisabled()
                     .simultaneousGesture(daySwipeGesture)
                     .transition(.opacity)
 
@@ -94,20 +96,20 @@ struct ContentView: View {
         }
         .overlay {
             if showGoalCelebration {
-                GoalCelebrationOverlay().transition(.opacity)
+                GoalCelebrationOverlay().transition(.opacity.combined(with: .scale(scale: 0.96)))
             }
         }
         .overlay(alignment: .bottom) {
             if let entry = appState.undoEntry {
                 UndoToast(
-                    message: "Logged \(appState.formatVolume(entry.ounces))",
+                    message: undoMessage(for: entry),
                     onUndo: {
                         appState.deleteLog(id: entry.id, date: entry.date)
                         UINotificationFeedbackGenerator().notificationOccurred(.success)
                     },
                     onDismiss: { appState.undoEntry = nil }
                 )
-                .padding(.bottom, appState.isEditMode ? 24 : 96)
+                .padding(.bottom, appState.isEditMode ? 24 : 80)
                 .transition(.move(edge: .bottom).combined(with: .opacity))
                 .id(entry.id)
                 .task(id: entry.id) {
@@ -122,7 +124,7 @@ struct ContentView: View {
             appState.goalJustReached = false
             withAnimation { showGoalCelebration = true }
             Task {
-                try? await Task.sleep(for: .seconds(2.2))
+                try? await Task.sleep(for: .seconds(1.8))
                 withAnimation { showGoalCelebration = false }
             }
         }
@@ -135,12 +137,20 @@ struct ContentView: View {
                 DebugLaunch.markReady()
                 if DebugLaunch.value(after: "-showScreen") == "settings" { showSettings = true }
                 if DebugLaunch.value(after: "-showScreen") == "weekly" { showWeeklySummary = true }
+                if DebugLaunch.value(after: "-showScreen") == "celebrate" { showGoalCelebration = true }
             }
             #endif
         }
         .onChange(of: presentingCover) { _, isPresenting in
             if !isPresenting { checkForWeeklySummary() }
         }
+    }
+
+    /// "Logged 8 oz", or "Logged 8 oz to Yesterday" when logging into a past day.
+    private func undoMessage(for entry: UndoEntry) -> String {
+        let amount = appState.formatVolume(entry.ounces)
+        guard !appState.isToday(entry.date) else { return "Logged \(amount)" }
+        return "Logged \(amount) to \(appState.dateLabel(for: entry.date))"
     }
 
     // MARK: Swipe between days
@@ -189,14 +199,14 @@ struct TopBar: View {
             } label: {
                 HStack(spacing: 6) {
                     Text(appState.isEditMode ? "Buttons" : appState.dateLabel(for: appState.selectedDate))
-                        .font(.system(size: 24, weight: .bold))
+                        .font(.system(size: 28, weight: .bold))
+                        .foregroundColor(.white)
                         .lineLimit(1)
                         .minimumScaleFactor(0.6)
-                        .glowingText()
                     if !appState.isEditMode {
-                        Image(systemName: "calendar")
-                            .font(.system(size: 15, weight: .semibold))
-                            .foregroundColor(.cyan)
+                        Image(systemName: "chevron.down")
+                            .font(.system(size: 13, weight: .bold))
+                            .foregroundColor(.white.opacity(0.5))
                     }
                 }
             }
@@ -206,25 +216,25 @@ struct TopBar: View {
             Spacer(minLength: 4)
 
             if appState.isEditMode {
-                pill(title: "Done", icon: "checkmark") {
+                pill(title: "Done") {
                     withAnimation { appState.isEditMode = false }
                 }
             } else {
                 if !appState.isToday(appState.selectedDate) {
-                    pill(title: "Today", icon: "arrow.uturn.forward") {
+                    pill(title: "Today") {
                         withAnimation { appState.selectedDate = Date() }
                     }
                 }
                 Button { showSettings = true } label: {
-                    Image(systemName: "gearshape.fill")
-                        .font(.system(size: 17))
-                        .foregroundColor(.cyan)
-                        .frame(width: 40, height: 36)
-                        .liquidGlassBackground(cornerRadius: 12)
+                    Image(systemName: "gearshape")
+                        .font(.system(size: 17, weight: .medium))
+                        .foregroundColor(.white.opacity(0.85))
+                        .frame(width: 38, height: 38)
+                        .background(Circle().fill(Color.cardFill))
                 }
                 .accessibilityLabel("Settings")
 
-                pill(title: "Edit", icon: nil) {
+                pill(title: "Edit") {
                     withAnimation { appState.isEditMode = true }
                 }
             }
@@ -232,17 +242,14 @@ struct TopBar: View {
         .frame(minHeight: 44)
     }
 
-    private func pill(title: String, icon: String?, action: @escaping () -> Void) -> some View {
+    private func pill(title: String, action: @escaping () -> Void) -> some View {
         Button(action: action) {
-            HStack(spacing: 5) {
-                if let icon { Image(systemName: icon).font(.system(size: 13, weight: .bold)) }
-                Text(title)
-            }
-            .font(.system(size: 15, weight: .semibold))
-            .foregroundColor(.cyan)
-            .padding(.horizontal, 14)
-            .frame(height: 36)
-            .liquidGlassBackground(cornerRadius: 14)
+            Text(title)
+                .font(.system(size: 15, weight: .semibold))
+                .foregroundColor(.water)
+                .padding(.horizontal, 16)
+                .frame(height: 38)
+                .background(Capsule().fill(Color.cardFill))
         }
     }
 }
@@ -254,11 +261,11 @@ struct BottomBar: View {
     let isIPadLayout: Bool
 
     var body: some View {
-        HStack(spacing: isIPadLayout ? 30 : 14) {
+        HStack(spacing: isIPadLayout ? 24 : 12) {
             item(title: "History", icon: "list.bullet", hint: "Shows the entries for the selected day") {
                 appState.showHistory = true
             }
-            item(title: "Trends", icon: "chart.line.uptrend.xyaxis", hint: "Shows charts and statistics") {
+            item(title: "Trends", icon: "chart.bar", hint: "Shows charts and statistics") {
                 appState.showTrends = true
             }
         }
@@ -268,16 +275,16 @@ struct BottomBar: View {
     private func item(title: String, icon: String, hint: String, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             HStack(spacing: 8) {
-                Image(systemName: icon)
+                Image(systemName: icon).foregroundColor(.water)
                 Text(title).fontWeight(.semibold)
             }
-            .font(.system(size: isIPadLayout ? 22 : 16))
+            .font(.system(size: isIPadLayout ? 20 : 16))
             .foregroundColor(.white)
             .frame(maxWidth: .infinity)
-            .frame(height: isIPadLayout ? 72 : 50)
-            .liquidGlassBackground(cornerRadius: isIPadLayout ? 30 : 25)
+            .frame(height: isIPadLayout ? 64 : 50)
+            .card(cornerRadius: 14)
         }
-        .buttonStyle(FluidButtonStyle())
+        .buttonStyle(PressableButtonStyle())
         .accessibilityHint(hint)
     }
 }
@@ -290,7 +297,7 @@ struct DayNavigator: View {
     private var canGoForward: Bool { !appState.isToday(appState.selectedDate) }
 
     var body: some View {
-        VStack(spacing: 14) {
+        VStack(spacing: 16) {
             HStack(spacing: 4) {
                 chevron("chevron.left", label: "Previous day", enabled: true) {
                     appState.shiftSelectedDate(by: -1)
@@ -308,8 +315,8 @@ struct DayNavigator: View {
     private func chevron(_ name: String, label: String, enabled: Bool, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             Image(systemName: name)
-                .font(.system(size: 22, weight: .semibold))
-                .foregroundColor(.cyan.opacity(enabled ? 0.9 : 0.2))
+                .font(.system(size: 20, weight: .semibold))
+                .foregroundColor(.white.opacity(enabled ? 0.55 : 0.12))
                 .frame(width: 44, height: 88)
                 .contentShape(Rectangle())
         }
@@ -320,57 +327,44 @@ struct DayNavigator: View {
 
 struct ProgressRing: View {
     @ObservedObject var appState: AppState
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    @State private var glow = false
-    @State private var bump = false
 
     private let size: CGFloat = 220
     private var total: Double { appState.totalFluidOunces(for: appState.selectedDate) }
     private var goalMet: Bool { Limits.isGoalMet(total: total, goal: appState.dailyGoal) }
+    private var progress: Double { appState.goalProgress(for: appState.selectedDate) }
 
     var body: some View {
         ZStack {
             Circle()
-                .stroke(Color.white.opacity(0.1), lineWidth: 14)
+                .stroke(Color.white.opacity(0.08), lineWidth: 12)
 
             Circle()
-                .trim(from: 0, to: appState.goalProgress(for: appState.selectedDate))
-                .stroke(
-                    AngularGradient(colors: goalMet ? [.green, .mint, .green] : [.cyan, .blue, .cyan],
-                                    center: .center),
-                    style: StrokeStyle(lineWidth: 14, lineCap: .round)
-                )
+                .trim(from: 0, to: progress)
+                .stroke(goalMet ? Color.goalGreen : Color.water,
+                        style: StrokeStyle(lineWidth: 12, lineCap: .round))
                 .rotationEffect(.degrees(-90))
-                .shadow(color: (goalMet ? Color.green : Color.cyan).opacity(0.6), radius: 8)
-                .animation(.spring(response: 0.8, dampingFraction: 0.75), value: appState.goalProgress(for: appState.selectedDate))
+                .animation(.spring(response: 0.7, dampingFraction: 0.85), value: progress)
 
-            VStack(spacing: 2) {
+            VStack(spacing: 0) {
                 Text(appState.formatNumber(total))
-                    .font(.system(size: appState.useMetric ? 56 : 72, weight: .bold, design: .rounded))
+                    .font(.system(size: appState.useMetric ? 56 : 68, weight: .semibold, design: .rounded))
                     .foregroundColor(.white)
-                    .shadow(color: .cyan.opacity(glow ? 0.8 : 0.4), radius: glow ? 18 : 8)
-                    .contentTransition(.numericText())
-                    .animation(.spring(response: 0.5, dampingFraction: 0.75), value: total)
-                    .scaleEffect(bump ? 1.08 : 1)
+                    .monospacedDigit()
+                    .contentTransition(.numericText(value: total))
+                    .animation(.snappy, value: total)
                     .lineLimit(1)
                     .minimumScaleFactor(0.5)
                     .frame(maxWidth: size - 40)
 
                 Text("\(appState.currentUnitString)\(appState.isToday(appState.selectedDate) ? " today" : "")")
-                    .font(.system(size: 17, weight: .medium))
-                    .foregroundColor(.white.opacity(0.85))
+                    .font(.system(size: 16, weight: .medium))
+                    .foregroundColor(.white.opacity(0.6))
             }
         }
         .frame(width: size, height: size)
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("\(appState.dateLabel(for: appState.selectedDate)) total")
-        .accessibilityValue("\(appState.formatVolume(total)) of \(appState.formatVolume(appState.dailyGoal)) goal, \(Int((appState.goalProgress(for: appState.selectedDate) * 100).rounded())) percent")
-        .onChange(of: total) { _, _ in
-            guard !reduceMotion else { return }
-            withAnimation(.spring(response: 0.25, dampingFraction: 0.5)) { bump = true; glow = true }
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { withAnimation { bump = false } }
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.7) { withAnimation(.easeOut(duration: 0.5)) { glow = false } }
-        }
+        .accessibilityValue("\(appState.formatVolume(total)) of \(appState.formatVolume(appState.dailyGoal)) goal, \(Int((progress * 100).rounded())) percent")
     }
 }
 
@@ -380,21 +374,19 @@ struct GoalCaption: View {
     var body: some View {
         let total = appState.totalFluidOunces(for: appState.selectedDate)
         let remaining = max(appState.dailyGoal - total, 0)
+        let met = Limits.isGoalMet(total: total, goal: appState.dailyGoal)
 
         HStack(spacing: 10) {
-            Text(Limits.isGoalMet(total: total, goal: appState.dailyGoal)
+            Text(met
                  ? "Goal reached · \(appState.formatVolume(appState.dailyGoal))"
                  : "\(appState.formatVolume(remaining)) to go · Goal \(appState.formatVolume(appState.dailyGoal))")
                 .font(.subheadline.weight(.medium))
-                .foregroundColor(.white.opacity(0.85))
+                .foregroundColor(met ? .goalGreen : .white.opacity(0.7))
 
             if appState.currentStreak > 0 {
                 Label("\(appState.currentStreak)", systemImage: "flame.fill")
-                    .font(.subheadline.weight(.bold))
+                    .font(.subheadline.weight(.semibold))
                     .foregroundColor(.orange)
-                    .padding(.horizontal, 10)
-                    .padding(.vertical, 4)
-                    .background(Capsule().fill(Color.orange.opacity(0.18)))
                     .accessibilityLabel("\(appState.currentStreak) day streak")
             }
         }
@@ -407,57 +399,32 @@ struct GoalCaption: View {
 // MARK: - Celebration
 
 struct GoalCelebrationOverlay: View {
-    private struct Dot: Identifiable {
-        let id: Int
-        let color: Color
-        let size: CGFloat
-        let x: CGFloat
-        let endY: CGFloat
-    }
-
-    @State private var animate = false
-    private let dots: [Dot] = (0..<40).map { i in
-        Dot(id: i,
-            color: [Color.yellow, .orange, .green, .cyan, .blue, .purple, .pink].randomElement()!,
-            size: .random(in: 7...16),
-            x: .random(in: -170...170),
-            endY: .random(in: -260...320))
-    }
-
     var body: some View {
         ZStack {
-            Color.black.opacity(0.45).ignoresSafeArea()
+            Color.black.opacity(0.35).ignoresSafeArea()
 
-            ForEach(dots) { dot in
-                Circle()
-                    .fill(dot.color)
-                    .frame(width: dot.size, height: dot.size)
-                    .offset(x: animate ? dot.x : 0, y: animate ? dot.endY : 0)
-                    .opacity(animate ? 0 : 1)
-                    .animation(.easeOut(duration: 1.6).delay(Double(dot.id) * 0.01), value: animate)
-            }
-
-            VStack(spacing: 14) {
-                Image(systemName: "trophy.fill")
-                    .font(.system(size: 76))
-                    .foregroundStyle(LinearGradient(colors: [.yellow, .orange], startPoint: .top, endPoint: .bottom))
-                    .shadow(color: .yellow.opacity(0.6), radius: 18)
-                    .scaleEffect(animate ? 1 : 0.4)
-                    .animation(.spring(response: 0.6, dampingFraction: 0.6), value: animate)
-
-                Text("Goal reached!")
-                    .font(.system(size: 34, weight: .bold))
+            VStack(spacing: 10) {
+                Image(systemName: "checkmark")
+                    .font(.system(size: 30, weight: .bold))
+                    .foregroundColor(.night)
+                    .frame(width: 64, height: 64)
+                    .background(Circle().fill(Color.goalGreen))
+                Text("Goal reached")
+                    .font(.title2.bold())
                     .foregroundColor(.white)
                 Text("Nice work today.")
-                    .font(.body)
-                    .foregroundColor(.white.opacity(0.9))
+                    .font(.subheadline)
+                    .foregroundColor(.white.opacity(0.7))
             }
+            .padding(.horizontal, 40)
+            .padding(.vertical, 28)
+            .background(RoundedRectangle(cornerRadius: 24, style: .continuous).fill(Color.night))
+            .card(cornerRadius: 24)
         }
         .allowsHitTesting(false)
         .accessibilityElement(children: .combine)
         .accessibilityLabel("Goal reached")
         .onAppear {
-            animate = true
             UINotificationFeedbackGenerator().notificationOccurred(.success)
         }
     }
@@ -471,38 +438,36 @@ struct UndoToast: View {
     let onDismiss: () -> Void
 
     var body: some View {
-        HStack(spacing: 14) {
-            Image(systemName: "checkmark.circle.fill")
-                .foregroundColor(.green)
-                .font(.system(size: 20))
-
+        HStack(spacing: 12) {
             Text(message)
                 .font(.system(size: 16, weight: .medium))
                 .foregroundColor(.white)
+                .lineLimit(1)
+                .minimumScaleFactor(0.8)
 
             Spacer(minLength: 8)
 
             Button("Undo", action: onUndo)
-                .font(.system(size: 16, weight: .bold))
-                .foregroundColor(.cyan)
+                .font(.system(size: 16, weight: .semibold))
+                .foregroundColor(.water)
 
             Button(action: onDismiss) {
                 Image(systemName: "xmark")
-                    .font(.system(size: 13, weight: .semibold))
-                    .foregroundColor(.white.opacity(0.65))
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundColor(.white.opacity(0.5))
                     .frame(width: 28, height: 28)
             }
             .accessibilityLabel("Dismiss")
         }
-        .padding(.horizontal, 18)
-        .padding(.vertical, 12)
+        .padding(.leading, 18)
+        .padding(.trailing, 10)
+        .padding(.vertical, 10)
         .background(
-            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .fill(.ultraThinMaterial)
-                .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous)
-                    .stroke(Color.cyan.opacity(0.4), lineWidth: 1))
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .fill(Color(hex: "#1A2A3C"))
+                .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous).strokeBorder(Color.cardEdge))
         )
-        .shadow(color: .black.opacity(0.35), radius: 16, y: 8)
+        .shadow(color: .black.opacity(0.3), radius: 12, y: 6)
         .padding(.horizontal, 16)
         .frame(maxWidth: 520)
     }

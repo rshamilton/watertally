@@ -53,7 +53,7 @@ struct GoalSettingsView: View {
                             .multilineTextAlignment(.center)
                             .frame(width: 170)
                             .padding(.vertical, 8)
-                            .liquidGlassBackground(cornerRadius: 18)
+                            .card(cornerRadius: 18)
                             .focused($focused)
                             .accessibilityLabel("Daily goal in \(appState.currentUnitString)")
                         Text(appState.currentUnitString)
@@ -76,9 +76,9 @@ struct GoalSettingsView: View {
                                         .foregroundColor(.white)
                                         .frame(maxWidth: .infinity)
                                         .padding(.vertical, 13)
-                                        .liquidGlassBackground(cornerRadius: 14)
+                                        .card(cornerRadius: 14)
                                 }
-                                .buttonStyle(FluidButtonStyle())
+                                .buttonStyle(PressableButtonStyle())
                             }
                         }
                     }
@@ -115,7 +115,7 @@ struct GoalSettingsView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") { dismiss() }.foregroundColor(.cyan)
+                    Button("Cancel") { dismiss() }.foregroundColor(.water)
                 }
             }
             .appScreen(themeColor: appState.themeColor)

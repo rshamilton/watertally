@@ -15,9 +15,6 @@ struct ButtonGridView: View {
         Group {
             if appState.buttons.isEmpty {
                 VStack(spacing: 10) {
-                    Image(systemName: "drop.circle")
-                        .font(.system(size: 40))
-                        .foregroundColor(.cyan.opacity(0.6))
                     Text("No buttons yet")
                         .font(.headline)
                         .foregroundColor(.white)
@@ -29,7 +26,7 @@ struct ButtonGridView: View {
                 .padding(.vertical, 30)
             } else {
                 let rows = Self.rows(for: appState.buttons.count)
-                let height: CGFloat = appState.buttons.count <= 4 ? 96 : 84
+                let height: CGFloat = appState.buttons.count <= 4 ? 88 : 76
 
                 VStack(spacing: 12) {
                     ForEach(Array(rows.enumerated()), id: \.offset) { _, row in
@@ -64,7 +61,7 @@ struct ButtonGridView: View {
                 .frame(maxWidth: .infinity)
                 .frame(height: height)
         }
-        .buttonStyle(GlassTileStyle(color: Color(hex: button.color)))
+        .buttonStyle(TileButtonStyle(color: Color(hex: button.color)))
         .accessibilityLabel(button.isCustom
             ? "\(button.name.isEmpty ? "Custom" : button.name), enter a custom amount"
             : "Log \(appState.formatVolume(button.fluidOunces)), \(button.name)")
@@ -92,48 +89,44 @@ struct HydrationButtonLabel: View {
         VStack(spacing: 4) {
             if !button.name.isEmpty {
                 Text(button.name)
-                    .font(.system(size: 17, weight: .bold))
+                    .font(.system(size: 17, weight: .semibold))
                     .lineLimit(2)
                     .minimumScaleFactor(0.6)
                     .multilineTextAlignment(.center)
             }
             if button.isCustom {
-                Label("Enter amount", systemImage: "keyboard")
-                    .font(.system(size: 12, weight: .medium))
-                    .labelStyle(.titleAndIcon)
-                    .opacity(0.85)
+                Text("Enter amount")
+                    .font(.system(size: 13, weight: .medium))
+                    .opacity(0.8)
             } else if button.showAmount {
                 Text(appState.formatVolume(button.fluidOunces))
-                    .font(.system(size: 14, weight: .semibold))
+                    .font(.system(size: 14, weight: .medium))
                     .lineLimit(1)
                     .minimumScaleFactor(0.6)
-                    .opacity(0.9)
+                    .opacity(0.8)
             }
         }
         .foregroundColor(.white)
-        .shadow(color: .black.opacity(0.35), radius: 2)
         .padding(.horizontal, 6)
     }
 }
 
-struct GlassTileStyle: ButtonStyle {
+/// A flat, solid tile in the button's own colour.
+struct TileButtonStyle: ButtonStyle {
     let color: Color
 
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
             .background(
-                RoundedRectangle(cornerRadius: 16, style: .continuous)
-                    .fill(.ultraThinMaterial)
-                    .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous)
-                        .fill(LinearGradient(colors: [color.opacity(0.32), Color.black.opacity(0.35)],
-                                             startPoint: .top, endPoint: .bottom)))
-                    .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous)
-                        .stroke(color, lineWidth: 2)
-                        .shadow(color: color.opacity(0.8), radius: 6))
+                RoundedRectangle(cornerRadius: 18, style: .continuous)
+                    .fill(color)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 18, style: .continuous)
+                            .fill(Color.black.opacity(configuration.isPressed ? 0.18 : 0))
+                    )
             )
-            .shadow(color: color.opacity(0.35), radius: 10, y: 4)
-            .scaleEffect(configuration.isPressed ? 0.95 : 1)
-            .animation(.spring(response: 0.2, dampingFraction: 0.7), value: configuration.isPressed)
+            .scaleEffect(configuration.isPressed ? 0.96 : 1)
+            .animation(.easeOut(duration: 0.15), value: configuration.isPressed)
     }
 }
 
@@ -163,10 +156,10 @@ struct CustomAmountView: View {
                         .multilineTextAlignment(.center)
                         .frame(width: 160)
                         .padding(.vertical, 10)
-                        .liquidGlassBackground(cornerRadius: 16)
+                        .card(cornerRadius: 16)
                         .focused($focused)
                         .onChange(of: amount) { _, newValue in
-                            if let value = Double(newValue), value > appState.maxDisplayAmount {
+                            if let value = NumberInput.parse(newValue), value > appState.maxDisplayAmount {
                                 amount = Volume.number(displayValue: appState.maxDisplayAmount, metric: appState.useMetric)
                             }
                         }
@@ -193,7 +186,7 @@ struct CustomAmountView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") { dismiss() }.foregroundColor(.cyan)
+                    Button("Cancel") { dismiss() }.foregroundColor(.water)
                 }
             }
             .appScreen(themeColor: appState.themeColor)
@@ -202,8 +195,7 @@ struct CustomAmountView: View {
     }
 
     private func add() {
-        let text = amount.trimmingCharacters(in: .whitespaces).replacingOccurrences(of: ",", with: ".")
-        guard let value = Double(text) else {
+        guard let value = NumberInput.parse(amount) else {
             errorText = "Enter an amount to continue."
             UINotificationFeedbackGenerator().notificationOccurred(.error)
             return

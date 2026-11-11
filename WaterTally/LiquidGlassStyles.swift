@@ -2,105 +2,102 @@
 //  LiquidGlassStyles.swift
 //  Water Tally
 //
-//  Shared look & feel: deep-water backgrounds, glass cards with an aqua edge.
+//  Shared look & feel: a calm night-blue background, flat cards with a hairline edge,
+//  one accent colour. The same palette is used by the website (web/assets/style.css).
 //
 
 import SwiftUI
 
+// MARK: - Palette
+
+extension Color {
+    /// App background.
+    static let night = Color(hex: "#0B1724")
+    /// Icon tile and deep surfaces.
+    static let brandInk = Color(hex: "#0E3A66")
+    /// Warm off-white used by the mark.
+    static let paper = Color(hex: "#F5F1E8")
+    /// The accent: buttons, links, progress.
+    static let water = Color(hex: "#5DB7F5")
+    /// Goal reached.
+    static let goalGreen = Color(hex: "#6FCF97")
+    /// Card fill and edge on the dark background.
+    static let cardFill = Color.white.opacity(0.06)
+    static let cardEdge = Color.white.opacity(0.09)
+}
+
+extension ShapeStyle where Self == Color {
+    static var water: Color { .water }
+    static var paper: Color { .paper }
+    static var goalGreen: Color { .goalGreen }
+}
+
 // MARK: - Background
 
-/// Deep-water gradient tinted by the user's theme colour. Used behind every screen.
+/// Night-blue background with a soft wash of the user's theme colour at the top.
 struct AppBackground: View {
     let themeColor: String
-    var diagonal = false
 
     var body: some View {
-        let theme = Color(hex: themeColor)
-        LinearGradient(
-            colors: diagonal
-                ? [.black, theme.opacity(0.35), theme.opacity(0.22), .black]
-                : [.black, theme.opacity(0.28), theme.opacity(0.14)],
-            startPoint: diagonal ? .topLeading : .top,
-            endPoint: diagonal ? .bottomTrailing : .bottom
-        )
+        ZStack {
+            Color.night
+            LinearGradient(colors: [Color(hex: themeColor).opacity(0.32), .clear],
+                           startPoint: .top, endPoint: UnitPoint(x: 0.5, y: 0.6))
+        }
         .ignoresSafeArea()
     }
 }
 
-// MARK: - Glass card
+// MARK: - Card
 
-struct LiquidGlassBackground: ViewModifier {
-    var cornerRadius: CGFloat = 20
+struct CardBackground: ViewModifier {
+    var cornerRadius: CGFloat = 16
 
     func body(content: Content) -> some View {
-        content
-            .background(
-                ZStack {
+        content.background(
+            RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                .fill(Color.cardFill)
+                .overlay(
                     RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                        .fill(Color.black.opacity(0.45))
-                        .background(
-                            RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                                .fill(.thinMaterial)
-                        )
-                    RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                        .stroke(
-                            LinearGradient(colors: [Color.cyan.opacity(0.75), Color.cyan.opacity(0.25)],
-                                           startPoint: .topLeading, endPoint: .bottomTrailing),
-                            lineWidth: 1.2
-                        )
-                }
-            )
-            .shadow(color: .black.opacity(0.3), radius: 8, x: 0, y: 4)
+                        .strokeBorder(Color.cardEdge, lineWidth: 1)
+                )
+        )
     }
 }
 
-struct GlowingText: ViewModifier {
-    var color: Color = .cyan
+// MARK: - Button styles
 
-    func body(content: Content) -> some View {
-        content
-            .foregroundColor(.white)
-            .shadow(color: color.opacity(0.55), radius: 6, x: 0, y: 0)
-    }
-}
-
-struct FluidButtonStyle: ButtonStyle {
+/// A gentle press response for custom-drawn buttons.
+struct PressableButtonStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
-            .scaleEffect(configuration.isPressed ? 0.94 : 1.0)
-            .opacity(configuration.isPressed ? 0.85 : 1.0)
-            .animation(.spring(response: 0.2, dampingFraction: 0.65), value: configuration.isPressed)
+            .scaleEffect(configuration.isPressed ? 0.97 : 1.0)
+            .opacity(configuration.isPressed ? 0.8 : 1.0)
+            .animation(.easeOut(duration: 0.15), value: configuration.isPressed)
     }
 }
 
-/// Filled, high-contrast call-to-action used for primary buttons.
+/// Solid, high-contrast call-to-action used for primary buttons.
 struct PrimaryButtonStyle: ButtonStyle {
-    var tint: Color = .cyan
+    var tint: Color = .water
+    @Environment(\.isEnabled) private var isEnabled
 
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
             .font(.headline)
-            .foregroundColor(.black.opacity(0.85))
+            .foregroundColor(.night)
             .frame(maxWidth: .infinity)
             .padding(.vertical, 16)
-            .background(
-                RoundedRectangle(cornerRadius: 16, style: .continuous)
-                    .fill(LinearGradient(colors: [tint, tint.opacity(0.75)], startPoint: .top, endPoint: .bottom))
-                    .shadow(color: tint.opacity(0.45), radius: 12, y: 4)
-            )
-            .scaleEffect(configuration.isPressed ? 0.97 : 1.0)
-            .opacity(configuration.isPressed ? 0.9 : 1.0)
-            .animation(.spring(response: 0.2, dampingFraction: 0.7), value: configuration.isPressed)
+            .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(tint))
+            .opacity(isEnabled ? (configuration.isPressed ? 0.85 : 1) : 0.5)
+            .scaleEffect(configuration.isPressed ? 0.98 : 1.0)
+            .animation(.easeOut(duration: 0.15), value: configuration.isPressed)
     }
 }
 
 extension View {
-    func liquidGlassBackground(cornerRadius: CGFloat = 20) -> some View {
-        modifier(LiquidGlassBackground(cornerRadius: cornerRadius))
-    }
-
-    func glowingText(color: Color = .cyan) -> some View {
-        modifier(GlowingText(color: color))
+    func card(cornerRadius: CGFloat = 16) -> some View {
+        modifier(CardBackground(cornerRadius: cornerRadius))
     }
 
     /// On iPad, present as a tall page-style sheet instead of a small form sheet (iOS 18+).
@@ -114,7 +111,7 @@ extension View {
         }
     }
 
-    /// Dark styling for sheets/navigation stacks so system chrome stays legible on the dark UI.
+    /// Background and dark styling for sheets and navigation stacks.
     func appScreen(themeColor: String) -> some View {
         self
             .background(AppBackground(themeColor: themeColor))
@@ -122,28 +119,39 @@ extension View {
     }
 }
 
-// MARK: - Colours
+// MARK: - Colour choices
+
+struct NamedColor: Identifiable {
+    let hex: String
+    let name: String
+    var color: Color { Color(hex: hex) }
+    var id: String { hex }
+}
 
 extension Color {
-    static let neonCyan = Color(red: 0.0, green: 0.66, blue: 0.8)
-
     /// Button colours (dark enough for white labels).
-    static let buttonColors: [(String, Color)] = [
-        "#00A8CC", "#0077B6", "#1565C0", "#6A1B9A", "#AD1457",
-        "#C62828", "#D84315", "#EF6C00", "#2E7D32", "#00695C"
-    ].map { ($0, Color(hex: $0)) }
+    static let buttonColors: [NamedColor] = [
+        NamedColor(hex: "#00A8CC", name: "Teal"), NamedColor(hex: "#0077B6", name: "Ocean"),
+        NamedColor(hex: "#1565C0", name: "Blue"), NamedColor(hex: "#6A1B9A", name: "Purple"),
+        NamedColor(hex: "#AD1457", name: "Raspberry"), NamedColor(hex: "#C62828", name: "Red"),
+        NamedColor(hex: "#D84315", name: "Rust"), NamedColor(hex: "#EF6C00", name: "Orange"),
+        NamedColor(hex: "#2E7D32", name: "Green"), NamedColor(hex: "#00695C", name: "Pine")
+    ]
 
     /// Background themes.
-    static let themeColors: [(String, Color)] = [
-        "#0B4F8A", "#00A8CC", "#0077B6", "#1565C0",
-        "#6A1B9A", "#4A148C", "#AD1457", "#C62828", "#00695C"
-    ].map { ($0, Color(hex: $0)) }
+    static let themeColors: [NamedColor] = [
+        NamedColor(hex: "#0B4F8A", name: "Deep water"), NamedColor(hex: "#00A8CC", name: "Teal"),
+        NamedColor(hex: "#0077B6", name: "Ocean"), NamedColor(hex: "#1565C0", name: "Blue"),
+        NamedColor(hex: "#6A1B9A", name: "Purple"), NamedColor(hex: "#4A148C", name: "Violet"),
+        NamedColor(hex: "#AD1457", name: "Raspberry"), NamedColor(hex: "#C62828", name: "Red"),
+        NamedColor(hex: "#00695C", name: "Pine")
+    ]
 
     init(hex: String) {
         let hex = hex.trimmingCharacters(in: CharacterSet.alphanumerics.inverted)
         var int: UInt64 = 0
         guard !hex.isEmpty, Scanner(string: hex).scanHexInt64(&int) else {
-            self.init(.sRGB, red: 0.0, green: 0.66, blue: 0.8, opacity: 1)
+            self.init(.sRGB, red: 0.36, green: 0.72, blue: 0.96, opacity: 1)
             return
         }
         let a, r, g, b: UInt64
@@ -151,8 +159,17 @@ extension Color {
         case 3:  (a, r, g, b) = (255, (int >> 8) * 17, (int >> 4 & 0xF) * 17, (int & 0xF) * 17)
         case 6:  (a, r, g, b) = (255, int >> 16, int >> 8 & 0xFF, int & 0xFF)
         case 8:  (a, r, g, b) = (int >> 24, int >> 16 & 0xFF, int >> 8 & 0xFF, int & 0xFF)
-        default: (a, r, g, b) = (255, 0, 168, 204)
+        default: (a, r, g, b) = (255, 93, 183, 245)
         }
         self.init(.sRGB, red: Double(r) / 255, green: Double(g) / 255, blue: Double(b) / 255, opacity: Double(a) / 255)
+    }
+}
+
+// MARK: - Number input
+
+enum NumberInput {
+    /// Parses what someone typed on a decimal pad, accepting either "." or "," as the separator.
+    static func parse(_ text: String) -> Double? {
+        Double(text.trimmingCharacters(in: .whitespaces).replacingOccurrences(of: ",", with: "."))
     }
 }

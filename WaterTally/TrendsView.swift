@@ -37,8 +37,8 @@ struct TrendsView: View {
             ScrollView {
                 VStack(spacing: 22) {
                     HStack(spacing: 14) {
-                        streakCard(icon: "flame.fill", color: .orange, value: appState.currentStreak, title: "Current streak")
-                        streakCard(icon: "trophy.fill", color: .yellow, value: appState.longestStreak, title: "Best streak")
+                        streakCard(value: appState.currentStreak, title: "Current streak")
+                        streakCard(value: appState.longestStreak, title: "Best streak")
                     }
 
                     Picker("Range", selection: $range) {
@@ -69,38 +69,36 @@ struct TrendsView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("Done") { dismiss() }.foregroundColor(.cyan)
+                    Button("Done") { dismiss() }.foregroundColor(.water)
                 }
             }
             .appScreen(themeColor: appState.themeColor)
         }
     }
 
-    private func streakCard(icon: String, color: Color, value: Int, title: String) -> some View {
-        VStack(spacing: 6) {
-            Image(systemName: icon)
-                .font(.system(size: 24))
-                .foregroundColor(color)
-                .shadow(color: color.opacity(0.6), radius: 6)
-            Text("\(value)")
-                .font(.system(size: 30, weight: .bold, design: .rounded))
-                .foregroundColor(.white)
+    private func streakCard(value: Int, title: String) -> some View {
+        VStack(alignment: .leading, spacing: 4) {
             Text(title)
-                .font(.caption.weight(.medium))
-                .foregroundColor(.white.opacity(0.8))
+                .font(.footnote)
+                .foregroundColor(.white.opacity(0.6))
+            HStack(alignment: .firstTextBaseline, spacing: 4) {
+                Text("\(value)")
+                    .font(.system(size: 30, weight: .semibold, design: .rounded))
+                    .foregroundColor(.white)
+                Text(value == 1 ? "day" : "days")
+                    .font(.subheadline)
+                    .foregroundColor(.white.opacity(0.6))
+            }
         }
-        .frame(maxWidth: .infinity)
-        .padding(.vertical, 16)
-        .liquidGlassBackground(cornerRadius: 16)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(16)
+        .card(cornerRadius: 16)
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("\(title): \(value) \(value == 1 ? "day" : "days")")
     }
 
     private var emptyState: some View {
         VStack(spacing: 12) {
-            Image(systemName: "chart.bar.xaxis")
-                .font(.system(size: 46))
-                .foregroundColor(.cyan.opacity(0.4))
             Text("No entries in this range")
                 .font(.headline)
                 .foregroundColor(.white)
@@ -111,7 +109,7 @@ struct TrendsView: View {
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, 40)
-        .liquidGlassBackground(cornerRadius: 20)
+        .card(cornerRadius: 20)
     }
 }
 
@@ -218,15 +216,15 @@ struct UsageChart: View {
                 .accessibilityValue("Average \(appState.formatVolume(data.averageOunces)) on days with entries. Goal reached on \(data.goalDays) of \(data.loggedDays) days.")
 
             HStack(spacing: 16) {
-                legend(.cyan, "Goal reached")
-                legend(.orange, "Below goal")
+                legend(.water, "Goal reached")
+                legend(.water.opacity(0.45), "Below goal")
                 legend(.white.opacity(0.6), "Goal line", dashed: true)
             }
             .font(.caption2)
             .foregroundColor(.white.opacity(0.7))
         }
         .padding(16)
-        .liquidGlassBackground(cornerRadius: 20)
+        .card(cornerRadius: 20)
     }
 
     @ViewBuilder
@@ -239,7 +237,7 @@ struct UsageChart: View {
                         BarMark(x: .value("Date", day.date, unit: .day),
                                 y: .value("Amount", appState.convertToDisplayUnit(day.ounces)),
                                 width: range == .week ? .fixed(22) : .ratio(0.7))
-                            .foregroundStyle(Limits.isGoalMet(total: day.ounces, goal: appState.dailyGoal) ? Color.cyan : Color.orange)
+                            .foregroundStyle(Limits.isGoalMet(total: day.ounces, goal: appState.dailyGoal) ? Color.water : Color.water.opacity(0.45))
                             .cornerRadius(4)
                     }
                 }
@@ -262,7 +260,7 @@ struct UsageChart: View {
                 BarMark(x: .value("Date", bucket.start, unit: component),
                         y: .value("Amount", appState.convertToDisplayUnit(bucket.averageOunces)),
                         width: width)
-                    .foregroundStyle(Limits.isGoalMet(total: bucket.averageOunces, goal: appState.dailyGoal) ? Color.cyan : Color.orange)
+                    .foregroundStyle(Limits.isGoalMet(total: bucket.averageOunces, goal: appState.dailyGoal) ? Color.water : Color.water.opacity(0.45))
                     .cornerRadius(3)
             }
             goalRule
@@ -280,16 +278,16 @@ struct UsageChart: View {
 
     private func xAxis(stride component: Calendar.Component, format: Date.FormatStyle) -> some AxisContent {
         AxisMarks(values: .stride(by: component)) { _ in
-            AxisGridLine(stroke: StrokeStyle(lineWidth: 0.5, dash: [2, 4])).foregroundStyle(Color.cyan.opacity(0.2))
+            AxisGridLine(stroke: StrokeStyle(lineWidth: 0.5, dash: [2, 4])).foregroundStyle(Color.white.opacity(0.1))
             AxisTick()
-            AxisValueLabel(format: format).foregroundStyle(Color.white.opacity(0.8))
+            AxisValueLabel(format: format).foregroundStyle(Color.white.opacity(0.6))
         }
     }
 
     private var yAxis: some AxisContent {
         AxisMarks { _ in
-            AxisGridLine(stroke: StrokeStyle(lineWidth: 0.5, dash: [2, 4])).foregroundStyle(Color.cyan.opacity(0.2))
-            AxisValueLabel().foregroundStyle(Color.white.opacity(0.8))
+            AxisGridLine(stroke: StrokeStyle(lineWidth: 0.5, dash: [2, 4])).foregroundStyle(Color.white.opacity(0.1))
+            AxisValueLabel().foregroundStyle(Color.white.opacity(0.6))
         }
     }
 
@@ -313,25 +311,32 @@ struct StatsSection: View {
     let range: TrendsView.TimeRange
 
     var body: some View {
-        VStack(spacing: 12) {
-            StatCard(title: "Average per day", value: appState.formatVolume(data.averageOunces),
-                     subtitle: "Across \(data.loggedDays) \(data.loggedDays == 1 ? "day" : "days") with entries", icon: "drop.fill")
-
-            StatCard(title: "Goal reached", value: "\(data.goalDays) of \(data.loggedDays) \(data.loggedDays == 1 ? "day" : "days")",
-                     subtitle: "Goal: \(appState.formatVolume(appState.dailyGoal))", icon: "target")
-
+        VStack(spacing: 0) {
+            StatRow(title: "Average per day", value: appState.formatVolume(data.averageOunces),
+                    detail: "\(data.loggedDays) \(data.loggedDays == 1 ? "day" : "days") with entries")
+            divider
+            StatRow(title: "Goal reached", value: "\(data.goalDays) of \(data.loggedDays)",
+                    detail: "Goal \(appState.formatVolume(appState.dailyGoal))")
             if let best = data.best {
-                StatCard(title: "Highest day", value: appState.formatVolume(best.ounces),
-                         subtitle: best.date.formatted(.dateTime.weekday(.wide).month(.abbreviated).day()), icon: "star.fill")
+                divider
+                StatRow(title: "Highest day", value: appState.formatVolume(best.ounces),
+                        detail: best.date.formatted(.dateTime.weekday(.abbreviated).month(.abbreviated).day()))
             }
             if let hour = data.peakHour {
-                StatCard(title: "Most active time", value: hourLabel(hour), subtitle: "When you log most often", icon: "clock.fill")
+                divider
+                StatRow(title: "Most active time", value: hourLabel(hour), detail: nil)
             }
             if let weekday = data.bestWeekday, data.loggedDays >= 7 {
-                StatCard(title: "Highest average weekday", value: weekday.name,
-                         subtitle: "Average \(appState.formatVolume(weekday.average))", icon: "calendar")
+                divider
+                StatRow(title: "Best weekday", value: weekday.name,
+                        detail: "Average \(appState.formatVolume(weekday.average))")
             }
         }
+        .card(cornerRadius: 16)
+    }
+
+    private var divider: some View {
+        Rectangle().fill(Color.cardEdge).frame(height: 1).padding(.leading, 16)
     }
 
     private func hourLabel(_ hour: Int) -> String {
@@ -340,36 +345,31 @@ struct StatsSection: View {
     }
 }
 
-struct StatCard: View {
+struct StatRow: View {
     let title: String
     let value: String
-    var subtitle: String? = nil
-    let icon: String
+    let detail: String?
 
     var body: some View {
-        HStack(spacing: 14) {
-            Image(systemName: icon)
-                .font(.system(size: 22))
-                .foregroundColor(.cyan)
-                .frame(width: 36)
-
-            VStack(alignment: .leading, spacing: 3) {
+        HStack(alignment: .firstTextBaseline) {
+            VStack(alignment: .leading, spacing: 2) {
                 Text(title)
-                    .font(.footnote)
-                    .foregroundColor(.cyan)
-                Text(value)
-                    .font(.title3.weight(.semibold))
+                    .font(.subheadline)
                     .foregroundColor(.white)
-                if let subtitle {
-                    Text(subtitle)
+                if let detail {
+                    Text(detail)
                         .font(.caption)
-                        .foregroundColor(.white.opacity(0.65))
+                        .foregroundColor(.white.opacity(0.55))
                 }
             }
-            Spacer(minLength: 0)
+            Spacer(minLength: 12)
+            Text(value)
+                .font(.body.weight(.semibold))
+                .foregroundColor(.white)
+                .multilineTextAlignment(.trailing)
         }
-        .padding(16)
-        .liquidGlassBackground(cornerRadius: 16)
+        .padding(.horizontal, 16)
+        .padding(.vertical, 12)
         .accessibilityElement(children: .combine)
     }
 }

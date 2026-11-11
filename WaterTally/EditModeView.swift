@@ -19,9 +19,6 @@ struct EditModeView: View {
         VStack(spacing: 0) {
             if appState.buttons.isEmpty {
                 VStack(spacing: 14) {
-                    Image(systemName: "hand.tap.fill")
-                        .font(.system(size: 46))
-                        .foregroundColor(.cyan.opacity(0.6))
                     Text("No buttons yet")
                         .font(.headline)
                         .foregroundColor(.white)
@@ -68,9 +65,9 @@ struct EditModeView: View {
     private var controls: some View {
         VStack(spacing: 10) {
             HStack(spacing: 8) {
-                control("Add", icon: "plus.circle.fill", disabled: atLimit) { appState.showAddButtonModal = true }
+                control("Add", icon: "plus", disabled: atLimit) { appState.showAddButtonModal = true }
                 control("Order", icon: "arrow.up.arrow.down", disabled: appState.buttons.count < 2) { appState.isRearrangeMode = true }
-                control("Theme", icon: "paintpalette.fill") { showThemePicker = true }
+                control("Theme", icon: "paintpalette") { showThemePicker = true }
                 control("Goal", icon: "target") { showGoalSettings = true }
             }
 
@@ -78,14 +75,14 @@ struct EditModeView: View {
                 get: { appState.hasCustomButton() },
                 set: { appState.setCustomButton(enabled: $0) }
             )) {
-                Label("Custom amount button", systemImage: "keyboard")
+                Text("Custom amount button")
                     .font(.subheadline.weight(.medium))
                     .foregroundColor(.white)
             }
-            .tint(.cyan)
+            .tint(.water)
             .padding(.horizontal, 16)
             .padding(.vertical, 8)
-            .liquidGlassBackground(cornerRadius: 14)
+            .card(cornerRadius: 14)
             .disabled(atLimit && !appState.hasCustomButton())
             .opacity(atLimit && !appState.hasCustomButton() ? 0.5 : 1)
 
@@ -102,15 +99,15 @@ struct EditModeView: View {
     private func control(_ title: String, icon: String, disabled: Bool = false, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             VStack(spacing: 3) {
-                Image(systemName: icon).font(.system(size: 17))
+                Image(systemName: icon).font(.system(size: 17, weight: .medium)).foregroundColor(.water)
                 Text(title).font(.system(size: 12, weight: .semibold))
             }
             .foregroundColor(.white)
             .frame(maxWidth: .infinity)
-            .frame(height: 52)
-            .liquidGlassBackground(cornerRadius: 16)
+            .frame(height: 56)
+            .card(cornerRadius: 14)
         }
-        .buttonStyle(FluidButtonStyle())
+        .buttonStyle(PressableButtonStyle())
         .disabled(disabled)
         .opacity(disabled ? 0.45 : 1)
     }
@@ -127,10 +124,9 @@ struct ButtonEditRow: View {
     var body: some View {
         Button { showEdit = true } label: {
             HStack(spacing: 14) {
-                Circle()
+                RoundedRectangle(cornerRadius: 8, style: .continuous)
                     .fill(Color(hex: button.color))
-                    .frame(width: 16, height: 16)
-                    .shadow(color: Color(hex: button.color).opacity(0.7), radius: 4)
+                    .frame(width: 28, height: 28)
 
                 VStack(alignment: .leading, spacing: 3) {
                     Text(button.name.isEmpty ? "Custom" : button.name)
@@ -141,12 +137,13 @@ struct ButtonEditRow: View {
                         .foregroundColor(.white.opacity(0.7))
                 }
                 Spacer()
-                Image(systemName: "pencil")
-                    .foregroundColor(.white.opacity(0.5))
+                Image(systemName: "chevron.right")
+                    .font(.footnote.weight(.semibold))
+                    .foregroundColor(.white.opacity(0.35))
             }
             .padding(.horizontal, 16)
-            .frame(height: 68)
-            .liquidGlassBackground(cornerRadius: 16)
+            .frame(height: 64)
+            .card(cornerRadius: 14)
         }
         .buttonStyle(.plain)
         .swipeActions(edge: .trailing, allowsFullSwipe: false) {
@@ -169,7 +166,7 @@ struct RearrangeView: View {
             List {
                 ForEach(appState.buttons) { button in
                     HStack(spacing: 14) {
-                        Circle().fill(Color(hex: button.color)).frame(width: 14, height: 14)
+                        RoundedRectangle(cornerRadius: 6, style: .continuous).fill(Color(hex: button.color)).frame(width: 22, height: 22)
                         Text(button.name.isEmpty ? "Custom" : button.name)
                             .foregroundColor(.white)
                         Spacer()
@@ -187,7 +184,7 @@ struct RearrangeView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("Done") { dismiss() }.foregroundColor(.cyan)
+                    Button("Done") { dismiss() }.foregroundColor(.water)
                 }
             }
             .appScreen(themeColor: appState.themeColor)
@@ -218,22 +215,26 @@ struct ThemeColorPicker: View {
                         .padding(.top, 8)
 
                     LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 18), count: 3), spacing: 18) {
-                        ForEach(Color.themeColors, id: \.0) { hex, color in
+                        ForEach(Color.themeColors) { option in
                             Button {
                                 UIImpactFeedbackGenerator(style: .light).impactOccurred()
-                                withAnimation(.spring(response: 0.3, dampingFraction: 0.65)) { selected = hex }
+                                withAnimation(.easeOut(duration: 0.2)) { selected = option.hex }
                             } label: {
-                                Circle()
-                                    .fill(color)
-                                    .frame(width: 64, height: 64)
-                                    .overlay(Circle().stroke(Color.white, lineWidth: selected == hex ? 4 : 0))
-                                    .overlay(Image(systemName: "checkmark").fontWeight(.bold)
-                                        .foregroundColor(.white).opacity(selected == hex ? 1 : 0))
-                                    .scaleEffect(selected == hex ? 1.1 : 1)
-                                    .shadow(color: color.opacity(0.6), radius: selected == hex ? 12 : 6)
+                                VStack(spacing: 8) {
+                                    Circle()
+                                        .fill(option.color)
+                                        .frame(width: 56, height: 56)
+                                        .padding(4)
+                                        .overlay(Circle().strokeBorder(Color.white, lineWidth: selected == option.hex ? 2.5 : 0))
+                                        .overlay(Image(systemName: "checkmark").fontWeight(.bold)
+                                            .foregroundColor(.white).opacity(selected == option.hex ? 1 : 0))
+                                    Text(option.name)
+                                        .font(.caption)
+                                        .foregroundColor(.white.opacity(selected == option.hex ? 1 : 0.6))
+                                }
                             }
-                            .accessibilityLabel("Theme colour")
-                            .accessibilityAddTraits(selected == hex ? .isSelected : [])
+                            .accessibilityLabel(option.name)
+                            .accessibilityAddTraits(selected == option.hex ? .isSelected : [])
                         }
                     }
                     .padding(.horizontal, 30)
@@ -250,7 +251,7 @@ struct ThemeColorPicker: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") { dismiss() }.foregroundColor(.cyan)
+                    Button("Cancel") { dismiss() }.foregroundColor(.water)
                 }
             }
             .appScreen(themeColor: selected)

@@ -26,7 +26,7 @@ struct OnboardingView: View {
 
     var body: some View {
         ZStack {
-            AppBackground(themeColor: "#0B4F8A", diagonal: true)
+            AppBackground(themeColor: AppState.defaultThemeColor)
 
             VStack(spacing: 0) {
                 header
@@ -83,7 +83,7 @@ struct OnboardingView: View {
                     .accessibilityHint("Skips to the final step")
             }
         }
-        .foregroundColor(.cyan)
+        .foregroundColor(.water)
         .frame(height: 44)
     }
 
@@ -145,6 +145,18 @@ private struct PageSubtitle: View {
     }
 }
 
+private struct PageIcon: View {
+    let systemName: String
+    var body: some View {
+        Image(systemName: systemName)
+            .font(.system(size: 30, weight: .medium))
+            .foregroundColor(.water)
+            .frame(width: 72, height: 72)
+            .background(Circle().fill(Color.cardFill))
+            .accessibilityHidden(true)
+    }
+}
+
 struct PageDots: View {
     let current: Int
     let total: Int
@@ -153,8 +165,8 @@ struct PageDots: View {
         HStack(spacing: 8) {
             ForEach(0..<total, id: \.self) { index in
                 Capsule()
-                    .fill(index == current ? Color.cyan : Color.white.opacity(0.28))
-                    .frame(width: index == current ? 22 : 8, height: 8)
+                    .fill(index == current ? Color.water : Color.white.opacity(0.2))
+                    .frame(width: index == current ? 18 : 7, height: 7)
             }
         }
         .animation(.spring(response: 0.3, dampingFraction: 0.75), value: current)
@@ -166,26 +178,19 @@ struct PageDots: View {
 // MARK: - 1. Welcome
 
 private struct WelcomePage: View {
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    @State private var float = false
-
     var body: some View {
-        VStack(spacing: 26) {
+        VStack(spacing: 28) {
             Spacer()
-            TallyMark(size: 150)
-                .offset(y: float ? -6 : 6)
-                .animation(reduceMotion ? nil : .easeInOut(duration: 2.4).repeatForever(autoreverses: true), value: float)
-                .onAppear { float = true }
+            BrandMark(size: 112)
 
-            VStack(spacing: 10) {
-                Text("Welcome to \(AppInfo.name)")
-                    .font(.system(size: 36, weight: .bold))
+            VStack(spacing: 12) {
+                Text(AppInfo.name)
+                    .font(.system(size: 40, weight: .bold))
                     .foregroundColor(.white)
                     .multilineTextAlignment(.center)
-                    .glowingText()
                 Text("Log your water in one tap.\nSee your day at a glance.")
                     .font(.title3)
-                    .foregroundColor(.white.opacity(0.85))
+                    .foregroundColor(.white.opacity(0.7))
                     .multilineTextAlignment(.center)
             }
             Spacer()
@@ -224,7 +229,7 @@ private struct GoalPage: View {
                     .multilineTextAlignment(.center)
                     .frame(width: 190)
                     .padding(.vertical, 8)
-                    .liquidGlassBackground(cornerRadius: 20)
+                    .card(cornerRadius: 20)
                     .focused($focused)
                     .toolbar {
                         ToolbarItemGroup(placement: .keyboard) {
@@ -249,9 +254,9 @@ private struct GoalPage: View {
                             .foregroundColor(.white)
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 13)
-                            .liquidGlassBackground(cornerRadius: 14)
+                            .card(cornerRadius: 14)
                     }
-                    .buttonStyle(FluidButtonStyle())
+                    .buttonStyle(PressableButtonStyle())
                 }
             }
             .frame(maxWidth: 420)
@@ -285,10 +290,10 @@ private struct TryItPage: View {
 
     private var buttons: [(String, String, Double)] {
         useMetric
-            ? [("Glass", "cup.and.saucer.fill", Volume.fromDisplay(250, metric: true)),
-               ("Bottle", "waterbottle.fill", Volume.fromDisplay(500, metric: true)),
-               ("Large", "drop.fill", Volume.fromDisplay(750, metric: true))]
-            : [("Glass", "cup.and.saucer.fill", 8), ("Bottle", "waterbottle.fill", 16), ("Large", "drop.fill", 24)]
+            ? [("Glass", "#00A8CC", Volume.fromDisplay(250, metric: true)),
+               ("Bottle", "#0077B6", Volume.fromDisplay(500, metric: true)),
+               ("Large", "#1565C0", Volume.fromDisplay(750, metric: true))]
+            : [("Glass", "#00A8CC", 8), ("Bottle", "#0077B6", 16), ("Large", "#1565C0", 24)]
     }
 
     var body: some View {
@@ -298,9 +303,8 @@ private struct TryItPage: View {
 
             VStack(spacing: 2) {
                 Text(Volume.number(total, metric: useMetric))
-                    .font(.system(size: 68, weight: .bold, design: .rounded))
-                    .foregroundColor(.cyan)
-                    .shadow(color: .cyan.opacity(0.5), radius: 10)
+                    .font(.system(size: 68, weight: .semibold, design: .rounded))
+                    .foregroundColor(.white)
                     .contentTransition(.numericText())
                 Text("\(Volume.unit(metric: useMetric)) (practice, not saved)")
                     .font(.subheadline)
@@ -310,7 +314,7 @@ private struct TryItPage: View {
             .accessibilityElement(children: .combine)
 
             HStack(spacing: 12) {
-                ForEach(buttons, id: \.0) { name, icon, ounces in
+                ForEach(buttons, id: \.0) { name, color, ounces in
                     Button {
                         withAnimation(.spring(response: 0.4, dampingFraction: 0.7)) {
                             total += ounces
@@ -318,25 +322,24 @@ private struct TryItPage: View {
                         }
                         UIImpactFeedbackGenerator(style: .medium).impactOccurred()
                     } label: {
-                        VStack(spacing: 8) {
-                            Image(systemName: icon).font(.system(size: 28)).foregroundColor(.cyan)
-                            Text(name).font(.subheadline.bold()).foregroundColor(.white)
+                        VStack(spacing: 4) {
+                            Text(name).font(.system(size: 17, weight: .semibold))
                             Text(Volume.string(ounces, metric: useMetric))
-                                .font(.caption).foregroundColor(.white.opacity(0.75))
+                                .font(.system(size: 14, weight: .medium)).opacity(0.8)
                         }
+                        .foregroundColor(.white)
                         .frame(maxWidth: .infinity)
-                        .frame(height: 110)
-                        .liquidGlassBackground(cornerRadius: 16)
+                        .frame(height: 88)
                     }
-                    .buttonStyle(FluidButtonStyle())
+                    .buttonStyle(TileButtonStyle(color: Color(hex: color)))
                 }
             }
             .frame(maxWidth: 460)
 
             if hasLogged {
-                Label("Nice! That's all there is to it.", systemImage: "checkmark.circle.fill")
+                Text("That's all there is to it.")
                     .font(.subheadline.weight(.semibold))
-                    .foregroundColor(.green)
+                    .foregroundColor(.goalGreen)
                     .transition(.scale.combined(with: .opacity))
             }
 
@@ -352,7 +355,7 @@ private struct TryItPage: View {
 
     private func tip(_ icon: String, _ text: String) -> some View {
         HStack(spacing: 12) {
-            Image(systemName: icon).foregroundColor(.cyan).frame(width: 24)
+            Image(systemName: icon).foregroundColor(.water).frame(width: 24)
             Text(text).font(.footnote).foregroundColor(.white.opacity(0.85))
             Spacer(minLength: 0)
         }
@@ -369,11 +372,7 @@ private struct HealthPage: View {
 
     var body: some View {
         PageScaffold {
-            Image(systemName: "heart.text.square.fill")
-                .font(.system(size: 76))
-                .foregroundColor(.pink)
-                .shadow(color: .pink.opacity(0.5), radius: 14)
-                .accessibilityHidden(true)
+            PageIcon(systemName: "heart")
 
             PageTitle(text: "Apple Health (optional)")
             PageSubtitle(text: "Save your water to Apple Health so it sits alongside your other health data and can be restored on a new phone.")
@@ -385,23 +384,23 @@ private struct HealthPage: View {
             }
             .padding(18)
             .frame(maxWidth: 460, alignment: .leading)
-            .liquidGlassBackground(cornerRadius: 18)
+            .card(cornerRadius: 18)
 
             if connected {
-                Label("Connected. You're all set.", systemImage: "checkmark.circle.fill")
+                Label("Connected", systemImage: "checkmark")
                     .font(.headline)
-                    .foregroundColor(.green)
+                    .foregroundColor(.goalGreen)
             } else if appState.healthKitManager.isAvailable {
                 Button {
                     isWorking = true
                     appState.setHealthKitEnabled(true) { _ in isWorking = false }
                 } label: {
                     HStack {
-                        if isWorking { ProgressView().tint(.black) }
+                        if isWorking { ProgressView().tint(.night) }
                         Text("Connect Apple Health")
                     }
                 }
-                .buttonStyle(PrimaryButtonStyle(tint: .pink))
+                .buttonStyle(PrimaryButtonStyle())
                 .frame(maxWidth: 420)
                 .disabled(isWorking)
 
@@ -418,8 +417,8 @@ private struct HealthPage: View {
 
     private func bullet(_ text: String) -> some View {
         HStack(alignment: .top, spacing: 10) {
-            Image(systemName: "checkmark.circle.fill").foregroundColor(.green)
-            Text(text).font(.subheadline).foregroundColor(.white.opacity(0.9))
+            Image(systemName: "checkmark").font(.footnote.weight(.bold)).foregroundColor(.water).padding(.top, 3)
+            Text(text).font(.subheadline).foregroundColor(.white.opacity(0.85))
         }
     }
 }
@@ -440,13 +439,13 @@ private struct RemindersPage: View {
             PageSubtitle(text: "Get a nudge to log a drink during the hours you choose. Reminders are created on your device and stop for the day once you reach your goal.")
 
             if appState.remindersEnabled {
-                Label("Reminders are on. Change the schedule in Settings.", systemImage: "checkmark.circle.fill")
+                Label("Reminders are on. Change the schedule in Settings.", systemImage: "checkmark")
                     .font(.subheadline.weight(.semibold))
-                    .foregroundColor(.green)
+                    .foregroundColor(.goalGreen)
                     .multilineTextAlignment(.center)
             } else {
                 Button("Turn On Reminders") { appState.setReminders(enabled: true) }
-                    .buttonStyle(PrimaryButtonStyle(tint: .yellow))
+                    .buttonStyle(PrimaryButtonStyle())
                     .frame(maxWidth: 420)
                 Text("Not now? Just tap Continue.")
                     .font(.footnote)
@@ -468,7 +467,7 @@ private struct ConsentPage: View {
 
             LegalPoints()
                 .padding(18)
-                .liquidGlassBackground(cornerRadius: 18)
+                .card(cornerRadius: 18)
                 .frame(maxWidth: 520)
 
             LegalConsentActions(onAccept: onAccept)

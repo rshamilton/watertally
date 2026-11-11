@@ -43,7 +43,7 @@ struct LegalLinksRow: View {
             Link("Medical Disclaimer", destination: AppLinks.medical)
         }
         .font(.footnote.weight(.semibold))
-        .foregroundColor(.cyan)
+        .foregroundColor(.water)
     }
 }
 
@@ -59,10 +59,10 @@ struct LegalPoints: View {
 
     private var points: [Point] {
         [
-            Point(icon: "cross.case.fill", color: .red, title: "Not medical advice", text: LegalCopy.short),
-            Point(icon: "stethoscope", color: .cyan, title: "Talk to a professional", text: LegalCopy.professional),
-            Point(icon: "exclamationmark.triangle.fill", color: .orange, title: "More isn't always better", text: LegalCopy.overhydration),
-            Point(icon: "lock.shield.fill", color: .green, title: "Your data stays with you", text: "Everything is stored on your device. \(AppInfo.name) has no account and no analytics or advertising.")
+            Point(icon: "cross.case", color: .water, title: "Not medical advice", text: LegalCopy.short),
+            Point(icon: "stethoscope", color: .water, title: "Talk to a professional", text: LegalCopy.professional),
+            Point(icon: "exclamationmark.triangle", color: .orange, title: "More isn't always better", text: LegalCopy.overhydration),
+            Point(icon: "lock", color: .water, title: "Your data stays with you", text: "Everything is stored on your device. \(AppInfo.name) has no account and no analytics or advertising.")
         ]
     }
 
@@ -71,9 +71,9 @@ struct LegalPoints: View {
             ForEach(points) { point in
                 HStack(alignment: .top, spacing: 14) {
                     Image(systemName: point.icon)
-                        .font(.title3)
+                        .font(.body.weight(.medium))
                         .foregroundColor(point.color)
-                        .frame(width: 30)
+                        .frame(width: 26)
                         .accessibilityHidden(true)
                     VStack(alignment: .leading, spacing: 3) {
                         Text(point.title)
@@ -98,7 +98,7 @@ struct LegalConsentView: View {
 
     var body: some View {
         ZStack {
-            AppBackground(themeColor: appState.themeColor, diagonal: true)
+            AppBackground(themeColor: appState.themeColor)
 
             ScrollView {
                 VStack(spacing: 22) {
@@ -111,7 +111,7 @@ struct LegalConsentView: View {
 
                     LegalPoints()
                         .padding(20)
-                        .liquidGlassBackground(cornerRadius: 20)
+                        .card(cornerRadius: 20)
 
                     LegalConsentActions { appState.acceptLegal() }
                 }

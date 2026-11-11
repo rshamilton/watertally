@@ -54,7 +54,8 @@ def page(filename, title, description, body, wide=False, noindex=False, root_pre
   <meta property="og:description" content="{html.escape(description)}">
   <meta property="og:image" content="{BASE}assets/social-card.png">
   <meta name="twitter:card" content="summary_large_image">
-  <meta name="theme-color" content="#04101c">
+  <meta name="theme-color" content="#0b1724" media="(prefers-color-scheme: dark)">
+  <meta name="theme-color" content="#f5f1e8" media="(prefers-color-scheme: light)">
   <link rel="stylesheet" href="{root_prefix}assets/style.css">
 </head>
 <body>
@@ -75,6 +76,7 @@ def page(filename, title, description, body, wide=False, noindex=False, root_pre
       <ul>
 {footer_links}
         <li><a href="{MAILTO}">Contact</a></li>
+        <li><a href="https://github.com/rshamilton/watertally">Source code</a></li>
       </ul>
       <p>&copy; {YEAR} {DEVELOPER}. {APP} is an independent app and is not affiliated with, endorsed by, or sponsored by Apple Inc. Apple, Apple Health, iPhone, iPad, and App Store are trademarks of Apple Inc.</p>
       <p>{APP} is a personal tracking tool, not a medical device. It does not provide medical advice. <a href="{root_prefix}medical-disclaimer.html">Read the medical disclaimer</a>.</p>

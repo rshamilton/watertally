@@ -9,6 +9,7 @@
 import WidgetKit
 import SwiftUI
 import AppIntents
+import UserNotifications
 
 // MARK: - Quick-log intent
 
@@ -58,8 +59,24 @@ struct LogWaterIntent: AppIntent {
         defaults.set(max(streaks.longest, defaults.integer(forKey: SharedStore.Key.longestStreak)),
                      forKey: SharedStore.Key.longestStreak)
 
+        // Reminders pause once the goal is met. The app does this when it logs; do the same here
+        // so a widget log doesn't leave today's reminders scheduled.
+        let todayTotal = logs[key]?.reduce(0) { $0 + $1.fluidOunces } ?? 0
+        if Limits.isGoalMet(total: todayTotal, goal: goal) {
+            await Self.removeTodaysReminders()
+        }
+
         WidgetCenter.shared.reloadAllTimelines()
         return .result()
+    }
+
+    /// Matches the identifiers written by ReminderScheduler in the app ("watertally.reminder.Y-M-D-H").
+    private static func removeTodaysReminders() async {
+        let parts = Calendar.current.dateComponents([.year, .month, .day], from: Date())
+        let prefix = "watertally.reminder.\(parts.year ?? 0)-\(parts.month ?? 0)-\(parts.day ?? 0)-"
+        let center = UNUserNotificationCenter.current()
+        let ids = await center.pendingNotificationRequests().map(\.identifier).filter { $0.hasPrefix(prefix) }
+        center.removePendingNotificationRequests(withIdentifiers: ids)
     }
 }
 
@@ -147,18 +164,14 @@ struct TallyProvider: TimelineProvider {
 
 // MARK: - Shared styling
 
-private let widgetBackground = LinearGradient(
-    colors: [Color(hex: "#020B14"), Color(hex: "#0B4F8A").opacity(0.75), Color(hex: "#0AA5D6").opacity(0.45)],
-    startPoint: .topLeading, endPoint: .bottomTrailing
-)
-
-private let ringGradient = LinearGradient(colors: [.cyan, .blue], startPoint: .topLeading, endPoint: .bottomTrailing)
-private let doneGradient = LinearGradient(colors: [.green, .mint], startPoint: .topLeading, endPoint: .bottomTrailing)
+private let widgetBackground = Color(hex: "#0B1724")
+private let progressColor = Color(hex: "#5DB7F5")
+private let doneColor = Color(hex: "#6FCF97")
 
 private struct SetupPrompt: View {
     var body: some View {
         VStack(spacing: 6) {
-            Image(systemName: "drop.fill").font(.title2).foregroundStyle(.cyan)
+            Image(systemName: "drop").font(.title2).foregroundStyle(progressColor)
             Text("Open Water Tally to get started")
                 .font(.footnote.weight(.semibold))
                 .multilineTextAlignment(.center)
@@ -177,7 +190,7 @@ private struct QuickLogButton: View {
         Button(intent: LogWaterIntent(amount: button.ounces, name: button.name)) {
             VStack(spacing: compact ? 2 : 4) {
                 Text(button.name)
-                    .font(.system(size: compact ? 14 : 17, weight: .bold))
+                    .font(.system(size: compact ? 14 : 16, weight: .semibold))
                     .lineLimit(1)
                     .minimumScaleFactor(0.55)
                 Text(Volume.string(button.ounces, metric: entry.useMetric))
@@ -191,9 +204,7 @@ private struct QuickLogButton: View {
             .frame(maxWidth: .infinity, minHeight: compact ? 44 : 60)
             .background(
                 RoundedRectangle(cornerRadius: 14, style: .continuous)
-                    .fill(Color(hex: button.color).opacity(0.38))
-                    .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous)
-                        .stroke(Color(hex: button.color), lineWidth: 2))
+                    .fill(Color(hex: button.color))
             )
         }
         .buttonStyle(.plain)
@@ -208,9 +219,9 @@ private struct ProgressBar: View {
     var body: some View {
         GeometryReader { proxy in
             ZStack(alignment: .leading) {
-                Capsule().fill(Color.white.opacity(0.22))
+                Capsule().fill(Color.white.opacity(0.12))
                 Capsule()
-                    .fill(done ? doneGradient : ringGradient)
+                    .fill(done ? doneColor : progressColor)
                     .frame(width: max(proxy.size.width * progress, progress > 0 ? height : 0))
             }
         }
@@ -229,16 +240,16 @@ private struct SmallView: View {
         } else {
             VStack(spacing: 6) {
                 ZStack {
-                    Circle().stroke(Color.white.opacity(0.2), lineWidth: 10)
+                    Circle().stroke(Color.white.opacity(0.12), lineWidth: 10)
                     Circle()
                         .trim(from: 0, to: entry.progress)
-                        .stroke(entry.goalMet ? doneGradient : ringGradient,
+                        .stroke(entry.goalMet ? doneColor : progressColor,
                                 style: StrokeStyle(lineWidth: 10, lineCap: .round))
                         .rotationEffect(.degrees(-90))
                     VStack(spacing: 0) {
                         let total = entry.compactTotal(entry.todayTotal)
                         Text(total.value)
-                            .font(.system(size: 34, weight: .bold, design: .rounded))
+                            .font(.system(size: 32, weight: .semibold, design: .rounded))
                             .minimumScaleFactor(0.5)
                             .lineLimit(1)
                         Text(total.unit)
@@ -277,7 +288,7 @@ private struct MediumView: View {
                     let total = entry.compactTotal(entry.todayTotal)
                     HStack(alignment: .firstTextBaseline, spacing: 4) {
                         Text(total.value)
-                            .font(.system(size: 46, weight: .bold, design: .rounded))
+                            .font(.system(size: 44, weight: .semibold, design: .rounded))
                             .minimumScaleFactor(0.5)
                             .lineLimit(1)
                         Text(total.unit)
@@ -291,10 +302,12 @@ private struct MediumView: View {
                         .minimumScaleFactor(0.6)
                     Spacer(minLength: 0)
                     ProgressBar(progress: entry.progress, done: entry.goalMet)
-                    Label("\(entry.currentStreak) day streak", systemImage: "flame.fill")
-                        .font(.system(size: 13, weight: .medium))
-                        .foregroundStyle(.orange)
-                        .labelStyle(.titleAndIcon)
+                    if entry.currentStreak > 0 {
+                        Label("\(entry.currentStreak) day streak", systemImage: "flame.fill")
+                            .font(.system(size: 13, weight: .medium))
+                            .foregroundStyle(.orange)
+                            .labelStyle(.titleAndIcon)
+                    }
                 }
                 .foregroundStyle(.white)
                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -334,7 +347,7 @@ private struct LargeView: View {
                         let total = entry.compactTotal(entry.todayTotal)
                         HStack(alignment: .firstTextBaseline, spacing: 5) {
                             Text(total.value)
-                                .font(.system(size: 48, weight: .bold, design: .rounded))
+                                .font(.system(size: 46, weight: .semibold, design: .rounded))
                                 .minimumScaleFactor(0.5)
                                 .lineLimit(1)
                             Text("/ \(Volume.string(entry.dailyGoal, metric: entry.useMetric))")
@@ -345,15 +358,17 @@ private struct LargeView: View {
                         }
                     }
                     Spacer()
-                    VStack(spacing: 2) {
-                        Label("\(entry.currentStreak)", systemImage: "flame.fill")
-                            .font(.system(size: 26, weight: .bold, design: .rounded))
-                            .foregroundStyle(.orange)
-                        Text("day streak").font(.system(size: 12)).opacity(0.7)
+                    if entry.currentStreak > 0 {
+                        VStack(spacing: 2) {
+                            Label("\(entry.currentStreak)", systemImage: "flame.fill")
+                                .font(.system(size: 22, weight: .semibold, design: .rounded))
+                                .foregroundStyle(.orange)
+                            Text("day streak").font(.system(size: 12)).opacity(0.6)
+                        }
+                        .padding(.horizontal, 14)
+                        .padding(.vertical, 10)
+                        .background(RoundedRectangle(cornerRadius: 14).fill(Color.white.opacity(0.08)))
                     }
-                    .padding(.horizontal, 14)
-                    .padding(.vertical, 10)
-                    .background(RoundedRectangle(cornerRadius: 14).fill(Color.white.opacity(0.12)))
                 }
 
                 ProgressBar(progress: entry.progress, done: entry.goalMet, height: 16)
@@ -450,7 +465,7 @@ extension Color {
         let hex = hex.trimmingCharacters(in: CharacterSet.alphanumerics.inverted)
         var int: UInt64 = 0
         guard hex.count == 6, Scanner(string: hex).scanHexInt64(&int) else {
-            self.init(.sRGB, red: 0, green: 0.66, blue: 0.8, opacity: 1)
+            self.init(.sRGB, red: 0.36, green: 0.72, blue: 0.96, opacity: 1)
             return
         }
         self.init(.sRGB, red: Double(int >> 16) / 255, green: Double(int >> 8 & 0xFF) / 255,

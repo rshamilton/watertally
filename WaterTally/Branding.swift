@@ -2,58 +2,57 @@
 //  Branding.swift
 //  Water Tally
 //
-//  The Water Tally mark: a drop with tally marks (four strokes and the slash) inside it.
+//  The Water Tally mark: four tally strokes crossed by a wave instead of a slash.
+//  Same geometry as tools/generate_brand_assets.swift (1024-unit grid).
 //
 
 import SwiftUI
 
-struct DropShape: Shape {
+/// The four upright tally strokes.
+struct TallyStrokes: Shape {
     func path(in rect: CGRect) -> Path {
-        func point(_ x: CGFloat, _ y: CGFloat) -> CGPoint {
-            CGPoint(x: rect.minX + x * rect.width, y: rect.minY + y * rect.height)
-        }
-        var path = Path()
-        path.move(to: point(0.5, 0.0))
-        path.addCurve(to: point(0.88, 0.62), control1: point(0.62, 0.22), control2: point(0.88, 0.40))
-        path.addCurve(to: point(0.5, 1.0), control1: point(0.88, 0.83), control2: point(0.71, 1.0))
-        path.addCurve(to: point(0.12, 0.62), control1: point(0.29, 1.0), control2: point(0.12, 0.83))
-        path.addCurve(to: point(0.5, 0.0), control1: point(0.12, 0.40), control2: point(0.38, 0.22))
-        path.closeSubpath()
-        return path
-    }
-}
-
-/// Four vertical strokes crossed by a slash: the classic "five" tally.
-struct TallyMarks: Shape {
-    func path(in rect: CGRect) -> Path {
+        let s = min(rect.width, rect.height) / 1024
         var path = Path()
         for index in 0..<4 {
-            let x = rect.minX + rect.width * (0.08 + 0.28 * CGFloat(index))
-            path.move(to: CGPoint(x: x, y: rect.minY))
-            path.addLine(to: CGPoint(x: x, y: rect.maxY))
+            let x = rect.minX + (300 + CGFloat(index) * 141) * s
+            path.move(to: CGPoint(x: x, y: rect.minY + 270 * s))
+            path.addLine(to: CGPoint(x: x, y: rect.minY + 754 * s))
         }
-        path.move(to: CGPoint(x: rect.minX - rect.width * 0.06, y: rect.maxY - rect.height * 0.12))
-        path.addLine(to: CGPoint(x: rect.maxX + rect.width * 0.06, y: rect.minY + rect.height * 0.12))
         return path
     }
 }
 
-struct TallyMark: View {
-    var size: CGFloat = 110
+/// The wave that crosses the strokes.
+struct TallyWave: Shape {
+    func path(in rect: CGRect) -> Path {
+        let s = min(rect.width, rect.height) / 1024
+        func p(_ x: CGFloat, _ y: CGFloat) -> CGPoint { CGPoint(x: rect.minX + x * s, y: rect.minY + y * s) }
+        var path = Path()
+        path.move(to: p(200, 640))
+        path.addCurve(to: p(824, 384), control1: p(420, 760), control2: p(600, 260))
+        return path
+    }
+}
+
+/// The app icon drawn in SwiftUI: a rounded ink tile with the mark.
+struct BrandMark: View {
+    var size: CGFloat = 96
 
     var body: some View {
+        let line = StrokeStyle(lineWidth: size * 62 / 1024, lineCap: .round)
         ZStack {
-            DropShape()
-                .fill(LinearGradient(colors: [Color(hex: "#7FE9FF"), Color(hex: "#1AA8E0"), Color(hex: "#0B5FA8")],
-                                     startPoint: .top, endPoint: .bottom))
-                .shadow(color: Color.cyan.opacity(0.55), radius: size * 0.18)
-
-            TallyMarks()
-                .stroke(Color.white.opacity(0.92), style: StrokeStyle(lineWidth: size * 0.05, lineCap: .round))
-                .frame(width: size * 0.36, height: size * 0.22)
-                .offset(y: size * 0.16)
+            RoundedRectangle(cornerRadius: size * 0.2237, style: .continuous)
+                .fill(Color.brandInk)
+            TallyStrokes().stroke(Color.paper, style: line)
+            TallyWave().stroke(Color.water, style: line)
         }
-        .frame(width: size * 0.82, height: size)
+        .frame(width: size, height: size)
         .accessibilityHidden(true)
     }
+}
+
+#Preview {
+    BrandMark(size: 160)
+        .padding()
+        .background(Color.night)
 }
