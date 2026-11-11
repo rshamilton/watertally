@@ -86,5 +86,23 @@ check(r.current == 0 && r.longest == 7, "longest 7 in the past: \(r)")
 // --- Day key
 check(DayKey.string(for: today).count == 10, "day key format")
 
+// --- Review prompt timing
+let rd = SharedStore.defaults
+for k in ["review.firstLaunchDate", "review.lastPromptDate", "review.lastPromptVersion"] { rd.removeObject(forKey: k) }
+var busy: [String: [WaterLog]] = [:]
+for o in 0..<6 { busy[day(o)] = (0..<4).map { _ in WaterLog(fluidOunces: 8, buttonName: "t") } }   // 6 days, 24 entries
+check(!ReviewPrompter.shouldAsk(logs: busy, version: "1.1 (4)"), "no prompt before first launch is recorded")
+ReviewPrompter.recordLaunch(now: cal.date(byAdding: .day, value: -3, to: Date())!)
+check(!ReviewPrompter.shouldAsk(logs: busy, version: "1.1 (4)"), "no prompt in the first week")
+rd.set(cal.date(byAdding: .day, value: -10, to: Date())!.timeIntervalSince1970, forKey: "review.firstLaunchDate")
+check(ReviewPrompter.shouldAsk(logs: busy, version: "1.1 (4)"), "prompt after a week of regular use")
+check(!ReviewPrompter.shouldAsk(logs: [day(0): log(8)], version: "1.1 (4)"), "no prompt for light use")
+ReviewPrompter.recordPrompt(version: "1.1 (4)")
+check(!ReviewPrompter.shouldAsk(logs: busy, version: "1.1 (4)"), "only once per version")
+check(!ReviewPrompter.shouldAsk(logs: busy, version: "1.2 (5)"), "not again within 120 days")
+rd.set(cal.date(byAdding: .day, value: -130, to: Date())!.timeIntervalSince1970, forKey: "review.lastPromptDate")
+check(ReviewPrompter.shouldAsk(logs: busy, version: "1.2 (5)"), "new version after 120 days may ask again")
+for k in ["review.firstLaunchDate", "review.lastPromptDate", "review.lastPromptVersion"] { rd.removeObject(forKey: k) }
+
 print(failures == 0 ? "ALL TESTS PASSED" : "\(failures) FAILURE(S)")
 exit(failures == 0 ? 0 : 1)

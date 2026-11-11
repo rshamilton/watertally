@@ -142,7 +142,8 @@ struct ButtonEditRow: View {
                     .foregroundColor(.white.opacity(0.35))
             }
             .padding(.horizontal, 16)
-            .frame(height: 64)
+            .padding(.vertical, 12)
+            .frame(minHeight: 64)
             .card(cornerRadius: 14)
         }
         .buttonStyle(.plain)

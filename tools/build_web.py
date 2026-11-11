@@ -14,9 +14,11 @@ APP = "Water Tally"
 DEVELOPER = "Ryan Hamilton"
 EMAIL = "watertally@googlegroups.com"
 BASE = "https://rshamilton.github.io/watertally/"
-EFFECTIVE = "September 21, 2026"
+EFFECTIVE = "November 10, 2026"
 YEAR = "2026"
 BUNDLE = "me.ryham.WaterTally"
+APP_STORE_ID = "6814481718"
+APP_STORE = f"https://apps.apple.com/us/app/water-tally-drink-tracker/id{APP_STORE_ID}"
 
 OUT = pathlib.Path(__file__).resolve().parent.parent / "web"
 
@@ -54,6 +56,7 @@ def page(filename, title, description, body, wide=False, noindex=False, root_pre
   <meta property="og:description" content="{html.escape(description)}">
   <meta property="og:image" content="{BASE}assets/social-card.png">
   <meta name="twitter:card" content="summary_large_image">
+  <meta name="apple-itunes-app" content="app-id={APP_STORE_ID}">
   <meta name="theme-color" content="#0b1724" media="(prefers-color-scheme: dark)">
   <meta name="theme-color" content="#f5f1e8" media="(prefers-color-scheme: light)">
   <link rel="stylesheet" href="{root_prefix}assets/style.css">
@@ -76,6 +79,7 @@ def page(filename, title, description, body, wide=False, noindex=False, root_pre
       <ul>
 {footer_links}
         <li><a href="{MAILTO}">Contact</a></li>
+        <li><a href="{APP_STORE}">App Store</a></li>
         <li><a href="https://github.com/rshamilton/watertally">Source code</a></li>
       </ul>
       <p>&copy; {YEAR} {DEVELOPER}. {APP} is an independent app and is not affiliated with, endorsed by, or sponsored by Apple Inc. Apple, Apple Health, iPhone, iPad, and App Store are trademarks of Apple Inc.</p>
@@ -94,7 +98,8 @@ HOME = f"""
       <img class="icon" src="assets/icon-512.png" alt="{APP} app icon" width="132" height="132">
       <h1>{APP}</h1>
       <p class="lead">Simple, private water tracking for iPhone. Log a drink in one tap, see your day at a glance, and keep your data on your device.</p>
-      <span class="badge">Coming soon to the App Store</span>
+      <a class="badge" href="{APP_STORE}">Download on the App Store</a>
+      <p class="muted small">Free. iPhone and iPad, iOS 17 or later.</p>
     </section>
 
     <ul class="features">
@@ -205,7 +210,7 @@ PRIVACY = f"""
     <p>Because your data stays on your device, it is protected by iOS's security features, including your passcode and app sandboxing. No system is completely secure, and I cannot guarantee absolute security. Keep your device updated and locked.</p>
 
     <h2 id="children">11. Children</h2>
-    <p>{APP} is not directed to children under 13 (or under the minimum age of digital consent where you live), and I do not knowingly collect information from children. Because {APP} does not collect information from anyone, there is nothing to delete from a child's use of the app itself. If you believe a child has emailed me personal information, contact me and I will delete it.</p>
+    <p>{APP} does not collect personal information from anyone, including children. Because everything stays on the device, there is nothing to delete from a child's use of the app itself. If you believe a child has emailed me personal information, contact me and I will delete it.</p>
 
     <h2 id="rights">12. Your privacy rights</h2>
     <p>Laws such as the GDPR and UK GDPR (EU/UK), and the CCPA/CPRA (California) and similar US state laws, may give you rights to access, correct, delete, or port your personal data, to object to or restrict its processing, and to withdraw consent. Because I do not receive or hold the data you log in {APP}, there is nothing for me to access, correct, or delete on my side; you already have direct control inside the app (view, edit, export, and delete). For the small amount of information I may hold from your emails, contact me and I will honour valid requests.</p>
@@ -236,7 +241,7 @@ TERMS = f"""
     <p>These Terms of Use ("Terms") are an agreement between you and {DEVELOPER} ("Developer", "I", "me") for your use of {APP} (the "App"), its widgets, and this website. By downloading, opening, or using the App, or by tapping "I Understand and Agree", you accept these Terms, the <a href="privacy.html">Privacy Policy</a>, and the <a href="medical-disclaimer.html">Medical Disclaimer</a>. If you do not agree, do not use the App.</p>
 
     <h2>2. Who may use the App</h2>
-    <p>You must be at least 13 years old (or the minimum age of digital consent where you live, if higher). If you are under 18 (or the age of majority where you live), you may use the App only with the involvement and permission of a parent or guardian, who accepts these Terms on your behalf.</p>
+    <p>If you are under 18 (or the age of majority where you live), please use the App with the involvement and permission of a parent or guardian, who accepts these Terms on your behalf.</p>
 
     <h2>3. Not medical advice; your responsibility</h2>
     <p>The App only records and summarises information that you enter. It does not diagnose, treat, cure, or prevent any condition, and it does not create a doctor&ndash;patient or any other professional relationship. Goals, streaks, reminders, and messages are personal conveniences, not recommendations. How much fluid is appropriate for you depends on your health, medications, activity, environment, and other factors. <strong>You are solely responsible for your health decisions.</strong> Consult a qualified healthcare professional before relying on the App for anything health-related, and never ignore or delay professional advice because of something in the App. In an emergency, contact your local emergency services.</p>

@@ -15,11 +15,26 @@ enum AppLinks {
     static let medical = URL(string: base + "medical-disclaimer.html")!
     static let support = URL(string: base + "support.html")!
     static let contactEmail = "watertally@googlegroups.com"
-    static var mailto: URL {
+    static var mailto: URL { mail(subject: "\(AppInfo.name) Support") }
+
+    /// The public source code repository and its issue forms (.github/ISSUE_TEMPLATE).
+    static let repository = URL(string: "https://github.com/rshamilton/watertally")!
+    static let license = URL(string: "https://github.com/rshamilton/watertally/blob/main/LICENSE")!
+    static let bugReport = URL(string: "https://github.com/rshamilton/watertally/issues/new?template=bug_report.yml")!
+    static let featureRequest = URL(string: "https://github.com/rshamilton/watertally/issues/new?template=feature_request.yml")!
+
+    /// Opens the App Store straight to "Write a Review".
+    static let appStoreID = "6814481718"
+    static let writeReview = URL(string: "https://apps.apple.com/app/id\(appStoreID)?action=write-review")!
+
+    /// A mailto link with a subject and, optionally, a prefilled body.
+    static func mail(subject: String, body: String? = nil) -> URL {
         var components = URLComponents()
         components.scheme = "mailto"
         components.path = contactEmail
-        components.queryItems = [URLQueryItem(name: "subject", value: "\(AppInfo.name) Support")]
+        var items = [URLQueryItem(name: "subject", value: subject)]
+        if let body { items.append(URLQueryItem(name: "body", value: body)) }
+        components.queryItems = items
         return components.url ?? URL(string: "mailto:\(contactEmail)")!
     }
 }
@@ -134,7 +149,7 @@ struct LegalConsentActions: View {
             Button("I Understand and Agree", action: onAccept)
                 .buttonStyle(PrimaryButtonStyle())
 
-            Text("By continuing you agree to the Terms of Use, acknowledge the Privacy Policy and Medical Disclaimer, and confirm you are at least 13 years old.")
+            Text("By continuing you agree to the Terms of Use, and acknowledge the Privacy Policy and Medical Disclaimer.")
                 .font(.caption)
                 .foregroundColor(.white.opacity(0.7))
                 .multilineTextAlignment(.center)

@@ -7,6 +7,7 @@
 //    xcrun simctl launch booted me.ryham.WaterTally -demoData -showScreen trends
 //  Screens: main, edit, settings, trends, history, calendar, goal, weekly, onboarding, consent
 //  Flags:   -demoData  -metric  -freshInstall  -simulateLog <oz,oz,...>  -onboardingPage <0-5>
+//           -daysAgo <n> (view a past day)   -about (with -showScreen settings: open About)
 //
 
 #if DEBUG
@@ -83,6 +84,9 @@ extension AppState {
                 addLog(fluidOunces: amount, buttonName: name,
                        date: Date().addingTimeInterval(-minutesAgo * 60), showUndo: false)
             }
+        }
+        if let days = DebugLaunch.value(after: "-daysAgo").flatMap(Int.init) {
+            selectedDate = Calendar.current.date(byAdding: .day, value: -days, to: Date()) ?? Date()
         }
         guard let screen = DebugLaunch.value(after: "-showScreen") else {
             NSLog("DEBUGLAUNCH applied")

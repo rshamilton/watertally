@@ -15,6 +15,7 @@ struct SettingsView: View {
     @State private var isRestoring = false
     @State private var restoreResult: String?
     @State private var showDeleteDialog = false
+    @State private var showAbout = false
 
     private struct ExportFile: Identifiable {
         let id = UUID()
@@ -23,13 +24,6 @@ struct SettingsView: View {
 
     private var healthConnected: Bool {
         appState.healthKitEnabled && appState.healthKitManager.isAuthorized
-    }
-
-    private var version: String {
-        let info = Bundle.main.infoDictionary
-        let short = info?["CFBundleShortVersionString"] as? String ?? "1.0"
-        let build = info?["CFBundleVersion"] as? String ?? "1"
-        return "\(short) (\(build))"
     }
 
     var body: some View {
@@ -59,6 +53,12 @@ struct SettingsView: View {
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Done") { dismiss() }.foregroundColor(.water)
                 }
+            }
+            .navigationDestination(isPresented: $showAbout) { AboutView(appState: appState) }
+            .onAppear {
+                #if DEBUG
+                if DebugLaunch.value(after: "-showScreen") == "settings", DebugLaunch.has("-about") { showAbout = true }
+                #endif
             }
             .sheet(isPresented: $showGoal) { GoalSettingsView(appState: appState) }
             .sheet(item: $exportFile) { file in ShareSheet(url: file.url) }
@@ -229,16 +229,19 @@ struct SettingsView: View {
 
     private var about: some View {
         Section {
-            row("Version", version)
-            Link(destination: AppLinks.privacy) { linkLabel("Privacy Policy", "hand.raised.fill") }
-            Link(destination: AppLinks.terms) { linkLabel("Terms of Use", "doc.text.fill") }
-            Link(destination: AppLinks.medical) { linkLabel("Medical Disclaimer", "cross.case.fill") }
-            Link(destination: AppLinks.support) { linkLabel("Help & Support", "questionmark.circle.fill") }
-            Link(destination: AppLinks.mailto) { linkLabel("Contact", "envelope.fill") }
+            Button { showAbout = true } label: {
+                HStack {
+                    Label("About & Feedback", systemImage: "info.circle").foregroundColor(.primary)
+                    Spacer()
+                    Image(systemName: "chevron.right").font(.footnote.weight(.semibold)).foregroundColor(.white.opacity(0.35))
+                }
+            }
+            row("Version", AppInfo.version)
         } header: {
             Text("About")
         } footer: {
             VStack(alignment: .leading, spacing: 8) {
+                Text("\(AppInfo.name) is open source. Report bugs, suggest features or leave a review in About & Feedback.")
                 Text(LegalCopy.short)
                 Text("\(LegalCopy.professional) \(LegalCopy.emergency)")
             }
@@ -258,14 +261,6 @@ struct SettingsView: View {
             Text(value).foregroundColor(.white.opacity(0.6))
         }
         .accessibilityElement(children: .combine)
-    }
-
-    private func linkLabel(_ title: String, _ icon: String) -> some View {
-        HStack {
-            Label(title, systemImage: icon).foregroundColor(.primary)
-            Spacer()
-            Image(systemName: "arrow.up.right").font(.footnote.weight(.semibold)).foregroundColor(.white.opacity(0.35))
-        }
     }
 
     private func hourLabel(_ hour: Int) -> String {

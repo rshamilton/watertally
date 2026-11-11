@@ -82,6 +82,7 @@ final class AppState: ObservableObject {
         DebugLaunch.prepareStorage()
         #endif
         loadEverything()
+        ReviewPrompter.recordLaunch()
         if buttons.isEmpty && !hasCompletedOnboarding { installDefaultButtons() }
         calculateStreaks()
 

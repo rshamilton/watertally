@@ -1,0 +1,63 @@
+name: Bug report
+description: Something in Water Tally isn't working the way it should.
+title: "[Bug] "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report this. Issues are public, so please don't include health details or anything personal. To report something privately, email watertally@googlegroups.com instead.
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: Describe the problem. Screenshots or screen recordings help a lot.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What did you expect to happen?
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Open Water Tally
+        2. Tap ...
+        3. See ...
+    validations:
+      required: false
+  - type: input
+    id: app-version
+    attributes:
+      label: App version
+      description: Settings › About & Feedback shows it, for example "1.1 (4)".
+      placeholder: "1.1 (4)"
+    validations:
+      required: true
+  - type: input
+    id: device
+    attributes:
+      label: Device and iOS version
+      placeholder: "iPhone 13, iOS 26.3"
+    validations:
+      required: true
+  - type: dropdown
+    id: area
+    attributes:
+      label: Which part of the app?
+      options:
+        - Logging / main screen
+        - History or calendar
+        - Trends or weekly summary
+        - Widgets
+        - Apple Health
+        - Reminders
+        - Settings, export or delete
+        - Onboarding
+        - Something else
+    validations:
+      required: false

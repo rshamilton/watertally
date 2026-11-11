@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Email the developer (private)
+    url: mailto:watertally@googlegroups.com?subject=Water%20Tally%20Support
+    about: For anything you'd rather not post publicly.
+  - name: Help & support
+    url: https://rshamilton.github.io/watertally/support.html
+    about: Common questions and answers.

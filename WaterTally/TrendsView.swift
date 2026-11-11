@@ -194,6 +194,8 @@ struct UsageChart: View {
     let data: TrendsData
     let range: TrendsView.TimeRange
 
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+
     private var metric: Bool { appState.useMetric }
     private var goal: Double { appState.convertToDisplayUnit(appState.dailyGoal) }
 
@@ -244,7 +246,7 @@ struct UsageChart: View {
                 goalRule
             }
             .chartXScale(domain: data.start...Calendar.current.date(byAdding: .day, value: 1, to: data.end)!)
-            .chartXAxis { xAxis(stride: range == .week ? .day : .weekOfYear, format: range == .week ? .dateTime.weekday(.abbreviated) : .dateTime.month(.abbreviated).day()) }
+            .chartXAxis { xAxis(stride: range == .week ? .day : .weekOfYear, format: range == .week ? (dynamicTypeSize.isAccessibilitySize ? .dateTime.weekday(.narrow) : .dateTime.weekday(.abbreviated)) : .dateTime.month(.abbreviated).day()) }
             .chartYAxis { yAxis }
 
         case .threeMonths:

@@ -6,6 +6,7 @@ Simple, private water tracking for iPhone and iPad. One-tap logging, Home Screen
 
 Water Tally is open source under the GNU GPL v3. The full app, its widgets and its website live in this repository.
 
+- App Store: <https://apps.apple.com/us/app/water-tally-drink-tracker/id6814481718>
 - Website: <https://rshamilton.github.io/watertally/>
 - Support: [watertally@googlegroups.com](mailto:watertally@googlegroups.com) or [open an issue](https://github.com/rshamilton/watertally/issues)
 
@@ -64,8 +65,10 @@ Please don't commit those signing changes in pull requests.
 scripts/run-ios-sim.sh -demoData -showScreen trends
 ```
 
-Screens: `main edit settings trends history calendar weekly consent onboarding yesterday`.
-Flags: `-demoData -metric -freshInstall -simulateLog <ounces> -onboardingPage <0-5>`.
+Screens: `main edit settings trends history calendar weekly consent onboarding yesterday celebrate`.
+Flags: `-demoData -metric -freshInstall -simulateLog <ounces> -onboardingPage <0-5> -daysAgo <n>`.
+
+`tools/app-store-screenshots.sh` regenerates the App Store screenshots (6.5" iPhone and 13" iPad) into `screenshots/`.
 
 ## Tools
 

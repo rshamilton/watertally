@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import StoreKit
 
 struct ContentView: View {
     @EnvironmentObject private var appState: AppState
@@ -15,6 +16,7 @@ struct ContentView: View {
     @State private var showWeeklySummary = false
     @State private var showSettings = false
     @State private var showGoalCelebration = false
+    @Environment(\.requestReview) private var requestReview
 
     private var isIPadLayout: Bool { horizontalSizeClass == .regular && verticalSizeClass == .regular }
     private var presentingCover: Bool { !appState.hasCompletedOnboarding || appState.needsLegalConsent }
@@ -96,7 +98,10 @@ struct ContentView: View {
         }
         .overlay {
             if showGoalCelebration {
-                GoalCelebrationOverlay().transition(.opacity.combined(with: .scale(scale: 0.96)))
+                GoalCelebrationOverlay {
+                    withAnimation { showGoalCelebration = false }
+                }
+                .transition(.opacity.combined(with: .scale(scale: 0.96)))
             }
         }
         .overlay(alignment: .bottom) {
@@ -140,6 +145,15 @@ struct ContentView: View {
                 if DebugLaunch.value(after: "-showScreen") == "celebrate" { showGoalCelebration = true }
             }
             #endif
+        }
+        .onChange(of: showGoalCelebration) { _, showing in
+            // Reaching the goal is a good moment to ask for a review, once the overlay is gone.
+            guard !showing, ReviewPrompter.shouldAsk(logs: appState.logs, version: AppInfo.version) else { return }
+            Task {
+                try? await Task.sleep(for: .seconds(0.8))
+                ReviewPrompter.recordPrompt(version: AppInfo.version)
+                requestReview()
+            }
         }
         .onChange(of: presentingCover) { _, isPresenting in
             if !isPresenting { checkForWeeklySummary() }
@@ -198,11 +212,11 @@ struct TopBar: View {
                 }
             } label: {
                 HStack(spacing: 6) {
-                    Text(appState.isEditMode ? "Buttons" : appState.dateLabel(for: appState.selectedDate))
+                    Text(appState.isEditMode ? "Buttons" : title)
                         .font(.system(size: 28, weight: .bold))
                         .foregroundColor(.white)
                         .lineLimit(1)
-                        .minimumScaleFactor(0.6)
+                        .minimumScaleFactor(0.5)
                     if !appState.isEditMode {
                         Image(systemName: "chevron.down")
                             .font(.system(size: 13, weight: .bold))
@@ -211,7 +225,6 @@ struct TopBar: View {
                 }
             }
             .accessibilityLabel(appState.isEditMode ? "Manage buttons" : "\(appState.dateLabel(for: appState.selectedDate)). Open calendar")
-            .layoutPriority(1)
 
             Spacer(minLength: 4)
 
@@ -242,15 +255,28 @@ struct TopBar: View {
         .frame(minHeight: 44)
     }
 
+    /// "Today", "Yesterday", or a short date ("Sat, Nov 7") so the buttons beside it always fit.
+    private var title: String {
+        let date = appState.selectedDate
+        let calendar = Calendar.current
+        if calendar.isDateInToday(date) || calendar.isDateInYesterday(date) {
+            return appState.dateLabel(for: date)
+        }
+        return date.formatted(.dateTime.weekday(.abbreviated).month(.abbreviated).day())
+    }
+
     private func pill(title: String, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             Text(title)
                 .font(.system(size: 15, weight: .semibold))
                 .foregroundColor(.water)
-                .padding(.horizontal, 16)
+                .lineLimit(1)
+                .fixedSize()
+                .padding(.horizontal, 14)
                 .frame(height: 38)
                 .background(Capsule().fill(Color.cardFill))
         }
+        .layoutPriority(1)
     }
 }
 
@@ -398,7 +424,11 @@ struct GoalCaption: View {
 
 // MARK: - Celebration
 
+/// Shown briefly when today's goal is reached. A tap anywhere dismisses it early; the tap is
+/// absorbed by the overlay, so it never presses a button underneath.
 struct GoalCelebrationOverlay: View {
+    var onDismiss: () -> Void = {}
+
     var body: some View {
         ZStack {
             Color.black.opacity(0.35).ignoresSafeArea()
@@ -421,9 +451,12 @@ struct GoalCelebrationOverlay: View {
             .background(RoundedRectangle(cornerRadius: 24, style: .continuous).fill(Color.night))
             .card(cornerRadius: 24)
         }
-        .allowsHitTesting(false)
+        .contentShape(Rectangle())
+        .onTapGesture(perform: onDismiss)
         .accessibilityElement(children: .combine)
         .accessibilityLabel("Goal reached")
+        .accessibilityAddTraits(.isModal)
+        .accessibilityAction(named: "Dismiss", onDismiss)
         .onAppear {
             UINotificationFeedbackGenerator().notificationOccurred(.success)
         }

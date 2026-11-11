@@ -1,0 +1,28 @@
+name: Feature suggestion
+description: An idea that would make Water Tally better.
+title: "[Idea] "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for the idea! Water Tally aims to stay simple, fast and private (no accounts, no tracking, no network requests), so ideas that keep it that way are the most likely to be added.
+  - type: textarea
+    id: idea
+    attributes:
+      label: What's your idea?
+    validations:
+      required: true
+  - type: textarea
+    id: why
+    attributes:
+      label: What problem would it solve for you?
+      description: How would you use it day to day?
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Anything you've tried instead?
+    validations:
+      required: false

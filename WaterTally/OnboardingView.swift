@@ -42,6 +42,7 @@ struct OnboardingView: View {
                     ConsentPage(onAccept: finish).tag(5)
                 }
                 .tabViewStyle(.page(indexDisplayMode: .never))
+                .clipped()
                 .frame(maxWidth: horizontalSizeClass == .regular ? 700 : .infinity)
 
                 if page < lastPage {
@@ -430,10 +431,7 @@ private struct RemindersPage: View {
 
     var body: some View {
         PageScaffold {
-            Image(systemName: "bell.badge.fill")
-                .font(.system(size: 70))
-                .foregroundStyle(.yellow, .cyan)
-                .accessibilityHidden(true)
+            PageIcon(systemName: "bell")
 
             PageTitle(text: "Gentle reminders (optional)")
             PageSubtitle(text: "Get a nudge to log a drink during the hours you choose. Reminders are created on your device and stop for the day once you reach your goal.")
