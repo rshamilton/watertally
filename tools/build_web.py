@@ -445,7 +445,7 @@ NOT_FOUND = f"""
 """
 
 # ---------------------------------------------------------------- FAQ (before you download)
-# Plain questions and answers, also published as FAQPage structured data. Keep answers factual.
+# Plain questions and answers, also published as FAQPage structured data.
 
 FAQ = [
     ("What is Water Tally?",
@@ -537,8 +537,8 @@ def jsonld(data):
 
 
 # ---------------------------------------------------------------- Comparison
-# Facts are taken only from each app's own US App Store page on COMPARED_ON. Re-check before
-# changing the date. Keep it factual and fair; other names are used only to identify the apps.
+# Facts come only from each app's own US App Store page as of COMPARED_ON. Other app names are
+# used only to identify the apps.
 
 COMPARE_ROWS = [
     # name, store URL, price line, ads (per listing), tracking (privacy label), other data collected
