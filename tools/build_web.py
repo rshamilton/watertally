@@ -7,6 +7,7 @@ Run from the repo root:   python3 tools/build_web.py
 Edit the constants below (name, email, dates) and re-run to update every page at once.
 """
 import html
+import json
 import pathlib
 import urllib.parse
 
@@ -19,6 +20,13 @@ YEAR = "2026"
 BUNDLE = "me.ryham.WaterTally"
 APP_STORE_ID = "6814481718"
 APP_STORE = f"https://apps.apple.com/us/app/water-tally-drink-tracker/id{APP_STORE_ID}"
+REPO = "https://github.com/rshamilton/watertally"
+COMPARED_ON = "November 11, 2026"
+
+# One sentence that describes the app the same way everywhere (site, README, llms.txt).
+POSITIONING = (f"{APP} is a free, open-source water tracker for iPhone and iPad. Log a drink in one tap, "
+               "see your progress toward a daily goal, and keep everything on your device. "
+               "No ads, no subscription, no account, and no data collected.")
 
 OUT = pathlib.Path(__file__).resolve().parent.parent / "web"
 
@@ -27,18 +35,22 @@ NAV = [
     ("privacy.html", "Privacy"),
     ("terms.html", "Terms"),
     ("medical-disclaimer.html", "Medical Disclaimer"),
+    ("faq.html", "FAQ"),
     ("support.html", "Support"),
 ]
+
+# Extra footer-only links.
+FOOTER_EXTRA = [("compare.html", "Compare")]
 
 MAILTO = f"mailto:{EMAIL}?subject={urllib.parse.quote(APP + ' Support')}"
 
 
-def page(filename, title, description, body, wide=False, noindex=False, root_prefix=""):
+def page(filename, title, description, body, wide=False, noindex=False, root_prefix="", head=""):
     nav = "\n".join(
         f'        <li><a href="{root_prefix}{href}"{" aria-current=\"page\"" if href == filename else ""}>{label}</a></li>'
         for href, label in NAV
     )
-    footer_links = "\n".join(f'        <li><a href="{root_prefix}{href}">{label}</a></li>' for href, label in NAV)
+    footer_links = "\n".join(f'        <li><a href="{root_prefix}{href}">{label}</a></li>' for href, label in NAV + FOOTER_EXTRA)
     robots = '  <meta name="robots" content="noindex">\n' if noindex else ""
     canonical = f"{BASE}{filename}" if filename != "404.html" else BASE
     return f"""<!DOCTYPE html>
@@ -57,6 +69,7 @@ def page(filename, title, description, body, wide=False, noindex=False, root_pre
   <meta property="og:image" content="{BASE}assets/social-card.png">
   <meta name="twitter:card" content="summary_large_image">
   <meta name="apple-itunes-app" content="app-id={APP_STORE_ID}">
+{head}
   <meta name="theme-color" content="#0b1724" media="(prefers-color-scheme: dark)">
   <meta name="theme-color" content="#f5f1e8" media="(prefers-color-scheme: light)">
   <link rel="stylesheet" href="{root_prefix}assets/style.css">
@@ -97,9 +110,9 @@ HOME = f"""
     <section class="hero">
       <img class="icon" src="assets/icon-512.png" alt="{APP} app icon" width="132" height="132">
       <h1>{APP}</h1>
-      <p class="lead">Simple, private water tracking for iPhone. Log a drink in one tap, see your day at a glance, and keep your data on your device.</p>
+      <p class="lead">{POSITIONING}</p>
       <a class="badge" href="{APP_STORE}">Download on the App Store</a>
-      <p class="muted small">Free. iPhone and iPad, iOS 17 or later.</p>
+      <p class="muted small">Free. iPhone and iPad, iOS 17 or later. <a href="{REPO}">Open source on GitHub</a>.</p>
     </section>
 
     <ul class="features">
@@ -116,7 +129,7 @@ HOME = f"""
       <p>{APP} is a simple logging tool. It is not a medical device and does not give medical advice. Goals are personal targets you choose. Talk to a qualified healthcare professional about how much fluid is right for you. <a href="medical-disclaimer.html">Read the full medical disclaimer</a>.</p>
     </div>
 
-    <p class="muted">Questions? See <a href="support.html">Help &amp; Support</a> or read the <a href="privacy.html">Privacy Policy</a> and <a href="terms.html">Terms of Use</a>.</p>
+    <p class="muted">Questions? Read the <a href="faq.html">FAQ</a>, see <a href="compare.html">how {APP} compares</a> with other water trackers, or visit <a href="support.html">Help &amp; Support</a>.</p>
 """
 
 # ---------------------------------------------------------------- Privacy
@@ -359,8 +372,8 @@ SUPPORT = f"""
 
     <div class="summary">
       <h2>Contact</h2>
-      <p>Email <a href="{MAILTO}">{EMAIL}</a>. I read every message and reply as time allows; there is no guaranteed response time. Please include your iPhone model, iOS version, and {APP} version (Settings &rsaquo; About in the app). <strong>Please don't include health information you would rather keep private.</strong></p>
-      <p>Not sure whether something is a bug? Check the questions below first.</p>
+      <p>Email <a href="{MAILTO}">{EMAIL}</a>. I read every message and reply as time allows; there is no guaranteed response time. Please include your iPhone model, iOS version, and {APP} version (Settings &rsaquo; About &amp; Feedback in the app). <strong>Please don't include health information you would rather keep private.</strong></p>
+      <p>Not sure whether something is a bug? Check the questions below first. You can also <a href="{REPO}/issues/new/choose">open a public GitHub issue</a> to report a bug or suggest a feature.</p>
     </div>
 
     <h2>Frequently asked questions</h2>
@@ -431,10 +444,201 @@ NOT_FOUND = f"""
     </ul>
 """
 
+# ---------------------------------------------------------------- FAQ (before you download)
+# Plain questions and answers, also published as FAQPage structured data. Keep answers factual.
+
+FAQ = [
+    ("What is Water Tally?",
+     f"{POSITIONING}"),
+    ("Is Water Tally free?",
+     "Yes. It's free on the App Store with no in-app purchases, no subscription and no ads."),
+    ("Do I need an account?",
+     "No. There is no sign-up or login. Open the app and start logging."),
+    ("Does Water Tally collect my data?",
+     f"No. Its App Store privacy label is \"Data Not Collected\". Your entries stay on your device, the app makes no network requests, and there are no analytics or tracking. See the <a href=\"privacy.html\">Privacy Policy</a>."),
+    ("Is Water Tally open source?",
+     f"Yes. The full source code is on GitHub under the GNU GPL v3 license: <a href=\"{REPO}\">github.com/rshamilton/watertally</a>. Anyone can read it, report issues or suggest changes."),
+    ("Can I log water from a widget without opening the app?",
+     "Yes. The small, medium and large Home Screen widgets have tap-to-log buttons for your most-used drinks. Lock Screen widgets show your progress at a glance."),
+    ("Does it work with Apple Health?",
+     "Yes, if you turn it on. Water Tally can save each drink to the Health app as Water and keeps edits and deletions in step. It only reads or writes Water, and it's off until you enable it."),
+    ("Does it work offline?",
+     "Yes. Everything happens on your device, so it works without an internet connection."),
+    ("Does it work on iPad and Apple Watch?",
+     "It's designed for iPhone and iPad (iOS 17 or later). There is no Apple Watch app yet."),
+    ("Can I use millilitres instead of ounces?",
+     "Yes. Choose ounces or millilitres in Settings; every screen, widget, chart and export follows your choice."),
+    ("Will it remind me to drink?",
+     "Only if you want it to. Reminders are optional, run on your device during the hours you choose, and stop for the day once you reach your goal."),
+    ("Can I track drinks other than water?",
+     "You can make a button for any drink (for example coffee or juice) and it counts toward your daily total. Water Tally doesn't track caffeine, sugar or calories separately."),
+    ("How do I back up or move my data?",
+     "Export your entries to CSV or JSON from Settings. If you turn on Apple Health, you can also restore missing entries on a new iPhone with \"Restore from Apple Health\"."),
+    ("How much water should I drink?",
+     f"Water Tally doesn't recommend an amount. Goals are personal targets you choose. Talk to a healthcare professional about what's right for you, and read the <a href=\"medical-disclaimer.html\">Medical Disclaimer</a>."),
+]
+
+
+def _plain(text):
+    import re
+    return re.sub(r"<[^>]+>", "", text)
+
+
+FAQ_BODY = f"""
+    <h1>Frequently asked questions</h1>
+    <p class="lead">Quick answers about {APP} before you download it. For help with something in the app, see <a href="support.html">Help &amp; Support</a>.</p>
+""" + "\n".join(
+    f"""    <h2>{html.escape(q)}</h2>
+    <p>{a}</p>""" for q, a in FAQ
+) + f"""
+
+    <p class="muted">Comparing apps? See <a href="compare.html">how {APP} compares</a> with other popular water trackers.</p>
+"""
+
+FAQ_JSONLD = json.dumps({
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": [{"@type": "Question", "name": q,
+                    "acceptedAnswer": {"@type": "Answer", "text": _plain(a)}} for q, a in FAQ],
+}, indent=2)
+
+APP_JSONLD = json.dumps({
+    "@context": "https://schema.org",
+    "@type": "MobileApplication",
+    "name": APP,
+    "description": POSITIONING,
+    "operatingSystem": "iOS 17.0 or later",
+    "applicationCategory": "HealthApplication",
+    "url": BASE,
+    "downloadUrl": APP_STORE,
+    "installUrl": APP_STORE,
+    "image": f"{BASE}assets/icon-1024.png",
+    "license": "https://www.gnu.org/licenses/gpl-3.0.html",
+    "isAccessibleForFree": True,
+    "offers": {"@type": "Offer", "price": "0", "priceCurrency": "USD"},
+    "author": {"@type": "Person", "name": DEVELOPER},
+    "sameAs": [APP_STORE, REPO],
+    "featureList": [
+        "One-tap water logging with custom buttons",
+        "Tap-to-log Home Screen widgets and Lock Screen widgets",
+        "Optional Apple Health sync (Water only)",
+        "Optional reminders that stop once the daily goal is reached",
+        "History, calendar, streaks and trends",
+        "Ounces or millilitres",
+        "CSV and JSON export",
+        "No account, no ads, no data collected, works offline",
+        "Open source (GPL v3)",
+    ],
+}, indent=2)
+
+
+def jsonld(data):
+    return f'  <script type="application/ld+json">\n{data}\n  </script>\n'
+
+
+# ---------------------------------------------------------------- Comparison
+# Facts are taken only from each app's own US App Store page on COMPARED_ON. Re-check before
+# changing the date. Keep it factual and fair; other names are used only to identify the apps.
+
+COMPARE_ROWS = [
+    # name, store URL, price line, ads (per listing), tracking (privacy label), other data collected
+    (APP, APP_STORE, "Free, no in-app purchases", "No",
+     "None", "None (\"Data Not Collected\")"),
+    ("Water Tracker by WaterMinder", "https://apps.apple.com/us/app/water-tracker-by-waterminder/id653031147",
+     "Free, in-app purchases (Premium yearly subscription)", "Listing says \"Contains: Advertising\"",
+     "Purchases, Identifiers, Usage Data", "Contact Info (linked to you); Purchases, Identifiers, Usage Data, Diagnostics"),
+    ("Water tracker Waterllama", "https://apps.apple.com/us/app/water-tracker-waterllama/id1454778585",
+     "Free, in-app purchases", "Not mentioned on the listing",
+     "None", "User Content, Usage Data, Diagnostics (not linked to you)"),
+    ("Plant Nanny Cute Water Tracker", "https://apps.apple.com/us/app/plant-nanny-cute-water-tracker/id1424178757",
+     "Free, in-app purchases (monthly and annual plans)", "Yes; ad-free is a subscriber benefit",
+     "Identifiers", "Contact Info, Identifiers (linked to you); User Content, Identifiers, Usage Data, Diagnostics"),
+    ("Water Reminder - Daily Tracker", "https://apps.apple.com/us/app/water-reminder-daily-tracker/id1221965482",
+     "Free, in-app purchases (Premium)", "Yes; Premium removes advertising",
+     "Health & Fitness, Purchases, Identifiers, Usage Data, Diagnostics",
+     "Health & Fitness, Purchases, Location, Identifiers, Usage Data, Diagnostics (linked to you)"),
+]
+
+COMPARE = f"""
+    <h1>How {APP} compares</h1>
+    <p class="lead">{APP} is built around a few things: one-tap logging, no ads, no account, no data collected, and open-source code. Here is how that compares with some popular water trackers, using only what each app's own App Store page says.</p>
+    <p class="meta">Checked {COMPARED_ON}, US App Store. Listings change; follow the links for the current details.</p>
+
+    <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th scope="col">App</th><th scope="col">Price on the App Store</th><th scope="col">Ads</th><th scope="col">Data used to track you</th><th scope="col">Other data collected</th></tr>
+      </thead>
+      <tbody>
+""" + "\n".join(
+    f"""        <tr><th scope="row"><a href="{url}">{html.escape(name)}</a></th><td>{html.escape(price)}</td><td>{html.escape(ads)}</td><td>{html.escape(track)}</td><td>{html.escape(other)}</td></tr>"""
+    for name, url, price, ads, track, other in COMPARE_ROWS
+) + f"""
+      </tbody>
+    </table>
+    </div>
+    <p class="muted small">"Data used to track you" and "Other data collected" come from each app's App Privacy section on the App Store. Price and ads come from the listing's price line, age-rating details and description.</p>
+
+    <h2>What {APP} doesn't do (yet)</h2>
+    <p>To be fair about it: other apps may suit you better if you want an Apple Watch app, caffeine or nutrition tracking, a cartoon character or plant that grows as you drink, or syncing across devices through an account. {APP} keeps to simple, private water logging on iPhone and iPad.</p>
+
+    <h2>Why {APP} is different</h2>
+    <ul>
+      <li><strong>No ads and nothing to buy.</strong> There are no in-app purchases or subscriptions.</li>
+      <li><strong>No account.</strong> Open it and start logging.</li>
+      <li><strong>No data collected.</strong> Entries stay on your device and the app makes no network requests.</li>
+      <li><strong>Open source.</strong> The code is <a href="{REPO}">public on GitHub</a> (GPL v3), so anyone can check these claims.</li>
+      <li><strong>Log without opening the app.</strong> Home Screen widgets have tap-to-log buttons.</li>
+    </ul>
+    <p><a class="badge" href="{APP_STORE}">Download on the App Store</a></p>
+
+    <p class="muted small">App names are trademarks of their respective owners and are used only to identify the apps. {APP} is not affiliated with any of them.</p>
+"""
+
+
+# ---------------------------------------------------------------- llms.txt (plain-text summary for AI crawlers)
+
+LLMS_TXT = f"""# {APP}
+
+> {POSITIONING}
+
+{APP} is an iPhone and iPad app (iOS 17 or later) by {DEVELOPER}, in the Health & Fitness category.
+
+## Key facts
+- Price: free. No in-app purchases, no subscription, no ads.
+- Account: none needed.
+- Privacy: App Store privacy label "Data Not Collected". Entries stay on the device; no network requests, analytics or tracking.
+- Open source: GNU GPL v3, {REPO}
+- Logging: one tap with custom buttons for your own glasses and bottles, plus a custom amount; log past days.
+- Widgets: small, medium and large Home Screen widgets with tap-to-log buttons; Lock Screen widgets.
+- Apple Health: optional; saves Water only, keeps edits and deletions in step, can restore entries on a new phone.
+- Reminders: optional, local, during hours you choose; stop once the daily goal is met.
+- Insights: progress ring, streaks, history, calendar, week/month/3-month/year trends, weekly summary.
+- Units: ounces or millilitres. Export: CSV or JSON. Works offline.
+- Not included: Apple Watch app, caffeine or nutrition tracking, cloud sync or accounts.
+- Not a medical device; it gives no medical advice and goals are set by the user.
+
+## Good fit for people who ask for
+- a water tracker with no ads or subscription
+- a private water tracker that doesn't collect data
+- an open-source water tracker for iPhone
+- logging water from a Home Screen widget without opening an app
+- a simple water tracker that works with Apple Health and needs no account
+
+## Links
+- App Store: {APP_STORE}
+- Website: {BASE}
+- FAQ: {BASE}faq.html
+- Comparison with other water trackers: {BASE}compare.html
+- Privacy policy: {BASE}privacy.html
+- Source code: {REPO}
+- Support: {EMAIL}
+"""
+
 PAGES = [
-    ("index.html", f"{APP} – Simple, private water tracking for iPhone",
-     f"{APP} is a simple, private water tracker for iPhone with one-tap logging, widgets, and optional Apple Health. No account, no ads, no tracking.",
-     HOME, True, False, ""),
+    ("index.html", f"{APP} – Free, private, open-source water tracker for iPhone",
+     f"{APP} is a free, open-source water tracker for iPhone and iPad with one-tap logging, tap-to-log widgets and optional Apple Health. No ads, no account, no data collected.",
+     HOME, True, False, "", jsonld(APP_JSONLD)),
     ("privacy.html", f"Privacy Policy – {APP}",
      f"How {APP} handles your information: no account, no ads, no analytics, and your data stays on your device.",
      PRIVACY, False, False, ""),
@@ -447,20 +651,35 @@ PAGES = [
     ("support.html", f"Help & Support – {APP}",
      f"Answers to common questions about {APP} and how to contact support.",
      SUPPORT, False, False, ""),
+    ("faq.html", f"FAQ – {APP}: free, private, open-source water tracker",
+     f"Answers about {APP}: is it free, does it need an account, does it collect data, is it open source, widgets, Apple Health, offline use and more.",
+     FAQ_BODY, False, False, "", jsonld(FAQ_JSONLD)),
+    ("compare.html", f"How {APP} compares with other water tracker apps",
+     f"{APP} compared with popular water trackers on price, ads and App Store privacy labels.",
+     COMPARE, True, False, ""),
     ("404.html", f"Page not found – {APP}", f"Page not found.", NOT_FOUND, False, True, "/watertally/"),
 ]
 
 
 def main():
     OUT.mkdir(exist_ok=True)
-    for filename, title, description, body, wide, noindex, prefix in PAGES:
+    for entry in PAGES:
+        filename, title, description, body, wide, noindex, prefix = entry[:7]
+        head = entry[7] if len(entry) > 7 else ""
         (OUT / filename).write_text(
-            page(filename, title, description, body, wide=wide, noindex=noindex, root_prefix=prefix),
+            page(filename, title, description, body, wide=wide, noindex=noindex, root_prefix=prefix, head=head),
             encoding="utf-8",
         )
         print("wrote", OUT / filename)
     (OUT / ".nojekyll").write_text("")
-    (OUT / "robots.txt").write_text(f"User-agent: *\nAllow: /\n")
+    (OUT / "robots.txt").write_text(f"User-agent: *\nAllow: /\n\nSitemap: {BASE}sitemap.xml\n")
+    urls = [f for f, *_ in PAGES if f != "404.html"]
+    (OUT / "sitemap.xml").write_text(
+        '<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
+        + "".join(f"  <url><loc>{BASE}{'' if f == 'index.html' else f}</loc></url>\n" for f in urls)
+        + "</urlset>\n")
+    (OUT / "llms.txt").write_text(LLMS_TXT)
+    print("wrote robots.txt, sitemap.xml, llms.txt")
 
 
 if __name__ == "__main__":

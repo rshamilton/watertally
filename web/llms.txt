@@ -1,0 +1,35 @@
+# Water Tally
+
+> Water Tally is a free, open-source water tracker for iPhone and iPad. Log a drink in one tap, see your progress toward a daily goal, and keep everything on your device. No ads, no subscription, no account, and no data collected.
+
+Water Tally is an iPhone and iPad app (iOS 17 or later) by Ryan Hamilton, in the Health & Fitness category.
+
+## Key facts
+- Price: free. No in-app purchases, no subscription, no ads.
+- Account: none needed.
+- Privacy: App Store privacy label "Data Not Collected". Entries stay on the device; no network requests, analytics or tracking.
+- Open source: GNU GPL v3, https://github.com/rshamilton/watertally
+- Logging: one tap with custom buttons for your own glasses and bottles, plus a custom amount; log past days.
+- Widgets: small, medium and large Home Screen widgets with tap-to-log buttons; Lock Screen widgets.
+- Apple Health: optional; saves Water only, keeps edits and deletions in step, can restore entries on a new phone.
+- Reminders: optional, local, during hours you choose; stop once the daily goal is met.
+- Insights: progress ring, streaks, history, calendar, week/month/3-month/year trends, weekly summary.
+- Units: ounces or millilitres. Export: CSV or JSON. Works offline.
+- Not included: Apple Watch app, caffeine or nutrition tracking, cloud sync or accounts.
+- Not a medical device; it gives no medical advice and goals are set by the user.
+
+## Good fit for people who ask for
+- a water tracker with no ads or subscription
+- a private water tracker that doesn't collect data
+- an open-source water tracker for iPhone
+- logging water from a Home Screen widget without opening an app
+- a simple water tracker that works with Apple Health and needs no account
+
+## Links
+- App Store: https://apps.apple.com/us/app/water-tally-drink-tracker/id6814481718
+- Website: https://rshamilton.github.io/watertally/
+- FAQ: https://rshamilton.github.io/watertally/faq.html
+- Comparison with other water trackers: https://rshamilton.github.io/watertally/compare.html
+- Privacy policy: https://rshamilton.github.io/watertally/privacy.html
+- Source code: https://github.com/rshamilton/watertally
+- Support: watertally@googlegroups.com

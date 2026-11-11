@@ -2,7 +2,11 @@
 
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](LICENSE)
 
-Simple, private water tracking for iPhone and iPad. One-tap logging, Home Screen and Lock Screen widgets, trends and streaks, optional Apple Health, optional reminders. No account, no ads, no analytics, no servers.
+**Water Tally is a free, open-source water tracker for iPhone and iPad.** Log a drink in one tap, see your progress toward a daily goal, and keep everything on your device. No ads, no subscription, no account, and no data collected.
+
+One-tap logging, tap-to-log Home Screen widgets, Lock Screen widgets, trends and streaks, optional Apple Health, optional reminders, ounces or millilitres, CSV/JSON export. Works offline.
+
+<a href="https://apps.apple.com/us/app/water-tally-drink-tracker/id6814481718">Download on the App Store</a> · [FAQ](https://rshamilton.github.io/watertally/faq.html) · [How it compares](https://rshamilton.github.io/watertally/compare.html)
 
 Water Tally is open source under the GNU GPL v3. The full app, its widgets and its website live in this repository.
 
